@@ -46,7 +46,7 @@ export function MapView({ activities, center = { lat: 28.6139, lng: 77.2090 }, c
                     <MapPin className="w-3 h-3" /> {activity.address}
                   </p>
                   <p className="text-xs text-olive-500 mb-3 flex items-center gap-1">
-                    <CalendarDays className="w-3 h-3" /> {new Date(activity.startTime).toLocaleDateString()}
+                    <CalendarDays className="w-3 h-3" /> {activity.startTime ? new Date(activity.startTime).toLocaleDateString() : 'Date TBA'}
                   </p>
                   <div className="flex items-center justify-between mt-2 pt-2 border-t border-olive-100">
                     <span className="text-xs font-semibold text-olive-600 flex items-center gap-1">

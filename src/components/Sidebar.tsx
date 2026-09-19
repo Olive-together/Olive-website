@@ -1,7 +1,8 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Home, CalendarDays, Users, MessageCircle, Bell,
-  User, Search, Settings, LogOut, Leaf, Menu, X,
+  User, Search, Settings, LogOut, Menu, X,
+  ShieldCheck,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -36,9 +37,15 @@ export function Sidebar() {
   });
   const unreadCount = unreadData?.count ?? 0;
 
-  const navItems = baseNavItems.map((item) => ({
+  const navItems = [
+    ...baseNavItems,
+    ...(user?.role === 'ADMIN'
+      ? [{ to: '/admin', label: 'Admin Panel', icon: ShieldCheck }]
+      : []),
+  ].map((item) => ({
     ...item,
     badge: item.to === '/notifications' && unreadCount > 0 ? unreadCount : undefined,
+    adminOnly: item.to === '/admin',
   }));
 
   const displayName = user?.profile?.displayName ?? user?.username ?? 'User';
@@ -68,7 +75,7 @@ export function Sidebar() {
 
       {/* Nav links */}
       <nav className="flex-1 px-3 space-y-1">
-        {navItems.map(({ to, label, icon: Icon, badge }) => {
+        {navItems.map(({ to, label, icon: Icon, badge, adminOnly }) => {
           const active = location.pathname === to || location.pathname.startsWith(to + '/');
           return (
             <Link
@@ -77,9 +84,12 @@ export function Sidebar() {
               onClick={() => setMobileOpen(false)}
               className={cn(
                 'flex items-center gap-3 px-3 py-3 rounded-2xl text-sm font-medium transition-all duration-200 relative group',
-                active
+                adminOnly
+                  ? 'mt-3 border border-red-100 bg-red-50/70 text-red-600 hover:bg-red-100 hover:text-red-700'
+                  : active
                   ? 'bg-olive-100 text-olive-800 font-semibold'
                   : 'text-olive-600 hover:bg-olive-50 hover:text-olive-800',
+                active && adminOnly && 'border-red-200 bg-red-100 text-red-700 font-semibold',
                 collapsed && 'justify-center'
               )}
             >
