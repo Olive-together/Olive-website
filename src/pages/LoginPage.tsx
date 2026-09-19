@@ -30,6 +30,11 @@ export function LoginPage() {
     setError(null);
     try {
       const tokens = await authApi.login(data.email, data.password);
+      
+      // Temporarily store tokens so authApi.getMe() uses them
+      localStorage.setItem('access_token', tokens.accessToken);
+      localStorage.setItem('refresh_token', tokens.refreshToken);
+      
       const user = await authApi.getMe();
       login(user, tokens.accessToken, tokens.refreshToken);
       navigate('/dashboard');

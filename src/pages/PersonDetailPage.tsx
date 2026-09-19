@@ -221,7 +221,7 @@ export function PersonDetailPage() {
                     <p className="font-semibold text-olive-900 text-sm truncate">{a.title}</p>
                     <p className="text-xs text-olive-500 mt-0.5 flex items-center gap-1">
                       <CalendarDays className="w-3 h-3" />
-                      {new Date(a.startTime).toLocaleDateString()}
+                      {a.startTime ? new Date(a.startTime).toLocaleDateString() : 'Date TBA'}
                     </p>
                   </div>
                 </Link>

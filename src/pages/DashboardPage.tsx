@@ -212,7 +212,7 @@ export function DashboardPage() {
 function NearYouSidebar({ city }: { city?: string }) {
   const { data } = useQuery({
     queryKey: ['activities', 'near-you', city],
-    queryFn: () => activitiesApi.getAll({ city, limit: 5 }),
+    queryFn: () => activitiesApi.getAll({ city, limit: 5, timeline: 'upcoming' }),
   });
 
   const activities = data?.items ?? [];
@@ -231,7 +231,7 @@ function NearYouSidebar({ city }: { city?: string }) {
               <p className="font-semibold text-olive-900 text-sm truncate">{a.title}</p>
               <div className="flex items-center justify-between mt-1 text-xs text-olive-500">
                 <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {a.city || 'Online'}</span>
-                <span>{new Date(a.startTime).toLocaleDateString()}</span>
+                <span>{(a.scheduledAt ?? a.startTime) ? new Date((a.scheduledAt ?? a.startTime)!).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'TBD'}</span>
               </div>
             </Link>
           ))

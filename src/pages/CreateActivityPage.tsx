@@ -63,7 +63,7 @@ export function CreateActivityPage() {
         title: data.title,
         description: data.description,
         category: data.category,
-        startTime: `${data.date}T${data.time}:00.000Z`,
+        scheduledAt: `${data.date}T${data.time}:00.000Z`,
         address: data.address,
         city: data.isOnline ? undefined : data.city,
         state: data.isOnline ? undefined : data.state,

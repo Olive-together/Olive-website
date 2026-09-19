@@ -77,7 +77,7 @@ export function SearchPage() {
                     />
                     <div>
                       <p className="font-semibold text-olive-900">{a.title}</p>
-                      <p className="text-sm text-olive-500">{new Date(a.startTime).toLocaleDateString()} · {a.city}</p>
+                      <p className="text-sm text-olive-500">{a.startTime ? new Date(a.startTime).toLocaleDateString() : 'Date TBA'} · {a.city}</p>
                     </div>
                     <ChevronRight className="w-4 h-4 text-olive-400 ml-auto" />
                   </Link>
@@ -136,7 +136,7 @@ export function SearchPage() {
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-olive-900 truncate">{a.title}</p>
                           <div className="flex gap-3 text-xs text-olive-500 mt-0.5">
-                            <span className="flex items-center gap-1"><CalendarDays className="w-3 h-3" />{new Date(a.startTime).toLocaleDateString()}</span>
+                            <span className="flex items-center gap-1"><CalendarDays className="w-3 h-3" />{a.startTime ? new Date(a.startTime).toLocaleDateString() : 'Date TBA'}</span>
                             <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{a.city}</span>
                             <span className="flex items-center gap-1"><Users className="w-3 h-3" />{a._count?.participants ?? 0}</span>
                           </div>

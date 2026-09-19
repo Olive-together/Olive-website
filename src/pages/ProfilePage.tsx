@@ -133,7 +133,7 @@ export function ProfilePage() {
                     />
                     <div className="min-w-0">
                       <h4 className="font-semibold text-olive-900 text-sm truncate">{activity.title}</h4>
-                      <p className="text-xs text-olive-500 mt-0.5">{new Date(activity.startTime).toLocaleDateString()}</p>
+                      <p className="text-xs text-olive-500 mt-0.5">{activity.startTime ? new Date(activity.startTime).toLocaleDateString() : 'Date TBA'}</p>
                       <p className="text-xs text-olive-500">{activity.city}</p>
                     </div>
                   </Link>

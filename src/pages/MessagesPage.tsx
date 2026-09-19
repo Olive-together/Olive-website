@@ -18,7 +18,8 @@ function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-function getOtherParticipant(conv: Conversation, myId: string) {
+function getOtherParticipant(conv: Conversation | undefined, myId: string) {
+  if (!conv) return null;
   return conv.participants.find((p) => p.id !== myId) ?? conv.participants[0];
 }
 
@@ -123,10 +124,24 @@ export function MessagesPage() {
   const user = useAuthStore((s) => s.user);
   const accessToken = useAuthStore((s) => s.accessToken);
 
-  const { data: conversations = [] } = useQuery({
+  const { data: conversations = [], refetch: refetchConversations } = useQuery({
     queryKey: ['conversations'],
     queryFn: () => chatApi.getConversations(),
   });
+
+  // When navigating in with a pre-selected conversationId (e.g. from activity page),
+  // ensure it appears in the sidebar by refetching the conversations list.
+  useEffect(() => {
+    const incomingId = location.state?.conversationId;
+    if (!incomingId) return;
+    // Give the query a moment to load; if the conv isn't in the list, refetch.
+    const timer = setTimeout(() => {
+      const exists = conversations.some((c) => c.id === incomingId);
+      if (!exists && conversations.length >= 0) refetchConversations();
+    }, 800);
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state?.conversationId, conversations.length]);
 
   const { data: msgData } = useQuery({
     queryKey: ['messages', selectedConvId],
@@ -173,7 +188,10 @@ export function MessagesPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Find the selected conversation — also check if we should show the chat pane
+  // even when the conv hasn't loaded in the sidebar list yet (race condition on first open)
   const selectedConv = conversations.find((c) => c.id === selectedConvId);
+  const canShowChat = !!selectedConvId && (!!selectedConv || !!msgData);
 
   const sendMessage = () => {
     if (!message.trim() || !selectedConvId || !accessToken) return;
@@ -210,8 +228,10 @@ export function MessagesPage() {
     return meta.name.toLowerCase().includes(search.toLowerCase());
   });
 
-  const chatHeader = selectedConv && user ? convMeta(selectedConv, user.id) : null;
-  const isGroupConv = selectedConv?.type === 'GROUP';
+  const chatHeader = selectedConv && user ? convMeta(selectedConv, user.id)
+    // Fallback while sidebar is loading the new group conv
+    : selectedConvId ? { name: 'Group Chat', avatar: null, isGroup: true } : null;
+  const isGroupConv = selectedConv?.type === 'GROUP' || (canShowChat && !selectedConv);
 
   return (
     <div className="flex-1 flex h-[calc(100vh-4rem)] lg:h-screen overflow-hidden animate-fade-in">
@@ -297,9 +317,9 @@ export function MessagesPage() {
                       <p className="text-xs text-olive-500 truncate mt-0.5">
                         {meta.isGroup && (
                           <span className="font-medium text-olive-600">
-                            {conv.lastMessage.sender.id === user?.id
+                            {conv.lastMessage.sender?.id === user?.id
                               ? 'You'
-                              : conv.lastMessage.sender.username}
+                              : (conv.lastMessage.sender?.username ?? 'Someone')}
                             {': '}
                           </span>
                         )}
@@ -322,7 +342,7 @@ export function MessagesPage() {
       </div>
 
       {/* ── Chat Area ────────────────────────────────────────────────────── */}
-      {selectedConvId && selectedConv && chatHeader ? (
+      {canShowChat && chatHeader ? (
         <div className={cn('flex flex-col flex-1 min-w-0 relative', selectedConvId ? 'flex' : 'hidden md:flex')}>
           {/* Header */}
           <div className="flex items-center gap-3 px-4 py-3 border-b border-olive-100 bg-white">
@@ -351,8 +371,8 @@ export function MessagesPage() {
               </p>
               {isGroupConv ? (
                 <p className="text-xs text-olive-400">
-                  {selectedConv.participants.length} member{selectedConv.participants.length !== 1 ? 's' : ''}
-                  {selectedConv.activity?.status === 'CANCELLED' && (
+                  {selectedConv?.participants?.length ?? 0} member{selectedConv?.participants?.length !== 1 ? 's' : ''}
+                  {selectedConv?.activity?.status === 'CANCELLED' && (
                     <span className="ml-2 px-1.5 py-0.5 bg-red-50 text-red-400 rounded-full text-[10px]">Activity cancelled</span>
                   )}
                 </p>
@@ -380,7 +400,7 @@ export function MessagesPage() {
           </div>
 
           {/* Members panel */}
-          {showMembers && isGroupConv && (
+          {showMembers && isGroupConv && selectedConv && (
             <GroupMembersPanel
               conv={selectedConv}
               myId={user!.id}
@@ -392,12 +412,12 @@ export function MessagesPage() {
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-olive-50">
             {messages.map((msg) => {
-              const isMe = msg.sender.id === user?.id;
+              const isMe = msg.sender?.id === user?.id;
               return (
                 <div key={msg.id} className={cn('flex', isMe ? 'justify-end' : 'justify-start')}>
                   {!isMe && (
                     <img
-                      src={getAvatar(msg.sender.profile?.avatarUrl, msg.sender.username)}
+                      src={getAvatar(msg.sender?.profile?.avatarUrl, msg.sender?.username ?? '')}
                       alt=""
                       className="w-7 h-7 rounded-full mr-2 flex-shrink-0 self-end"
                     />
@@ -411,7 +431,7 @@ export function MessagesPage() {
                     {/* Show sender name in group chats for other users' messages */}
                     {isGroupConv && !isMe && (
                       <p className="text-[10px] font-semibold text-olive-500 mb-1">
-                        {msg.sender.profile?.displayName ?? msg.sender.username}
+                        {msg.sender?.profile?.displayName ?? msg.sender?.username ?? 'Unknown'}
                       </p>
                     )}
                     <p>{msg.content}</p>
