@@ -5,7 +5,12 @@ export interface CreateActivityData {
   title: string;
   description: string;
   category: string;
-  startTime: string; // ISO string
+  /** ISO string — maps to the backend's scheduledAt field */
+  scheduledAt?: string;
+  /** ISO string — maps to the backend's endsAt field */
+  endsAt?: string;
+  /** @deprecated Use scheduledAt instead; kept for backwards-compat */
+  startTime?: string;
   endTime?: string;
   address: string;
   city?: string;
@@ -49,9 +54,9 @@ export const activitiesApi = {
   update: (id: string, data: Partial<CreateActivityData>) =>
     api.patch<Activity>(`/activities/${id}`, data).then((r) => r.data),
 
-  /** Delete an activity (host only) */
-  delete: (id: string) =>
-    api.delete(`/activities/${id}`).then((r) => r.data),
+  /** Delete an activity (host or admin) */
+  delete: (id: string, reason?: string) =>
+    api.delete(`/activities/${id}`, { data: reason ? { reason } : undefined }).then((r) => r.data),
 
   /** Join an activity */
   join: (id: string) =>

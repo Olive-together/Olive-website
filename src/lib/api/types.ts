@@ -59,9 +59,16 @@ export interface Activity {
   id: string;
   title: string;
   description: string;
-  category: string;
+  /** Not a real backend field — derived from tags[0] on the frontend */
+  category?: string;
+  tags: string[];
   status: string;
-  startTime: string;
+  /** Backend field — ISO date string for when the activity is scheduled (may be null if TBD) */
+  scheduledAt: string | null;
+  /** Backend field — ISO date string for when the activity ends */
+  endsAt: string | null;
+  /** Legacy alias — same as scheduledAt; kept for backwards compatibility */
+  startTime: string | null;
   endTime: string | null;
   address: string;
   city: string;
@@ -70,8 +77,14 @@ export interface Activity {
   isFree: boolean;
   price: number | null;
   coverImageUrl: string | null;
-  tags: string[];
+  coverUrl: string | null;
   host: {
+    id: string;
+    username: string;
+    profile: { displayName: string | null; avatarUrl: string | null } | null;
+  };
+  /** Backend returns `creator` instead of `host` in list responses */
+  creator?: {
     id: string;
     username: string;
     profile: { displayName: string | null; avatarUrl: string | null } | null;
