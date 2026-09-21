@@ -24,4 +24,8 @@ export const connectionsApi = {
   /** Get pending connection requests */
   getPending: () =>
     api.get<Connection[]>('/connections/pending').then((r) => r.data),
+
+  /** Get a single connection by ID */
+  getById: (connectionId: string) =>
+    api.get<Connection>(`/connections/${connectionId}`).then((r) => r.data),
 };
