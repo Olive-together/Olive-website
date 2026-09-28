@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /activities/create
+Disallow: /messages
+Disallow: /notifications
+Disallow: /profile
+Disallow: /profile/edit
+Disallow: /search
+Disallow: /settings
+Disallow: /admin
+Disallow: /admin/login
+Disallow: /auth/callback
+
+# Sitemap location
+Sitemap: https://letsdotogether.app/sitemap.xml
