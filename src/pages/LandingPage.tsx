@@ -12,26 +12,15 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { activitiesApi } from '@/lib/api/activities.api';
 import { ActivityCard } from '@/components/ActivityCard';
+import { Footer } from '@/components/Footer';
 import {
-  Leaf, ArrowRight, Users, CalendarDays, MapPin,
+  ArrowRight,
   Star, ChevronRight, Sparkles, Globe, Heart,
 } from 'lucide-react';
-import { mockActivities } from '@/lib/mockData';
 import { useAuthStore } from '@/store/authStore';
 import { authApi } from '@/lib/api/auth.api';
 
-const categories = [
-  { emoji: '🎵', label: 'Music' },
-  { emoji: '🏔️', label: 'Outdoors' },
-  { emoji: '📸', label: 'Photography' },
-  { emoji: '🍕', label: 'Food & Drinks' },
-  { emoji: '💻', label: 'Tech' },
-  { emoji: '🎨', label: 'Art' },
-  { emoji: '📚', label: 'Books' },
-  { emoji: '🧘', label: 'Wellness' },
-];
 
-const indianCities = ['Bhopal', 'Delhi', 'Mumbai', 'Bangalore', 'Pune', 'Hyderabad'];
 
 const howItWorks = [
   { icon: Globe, title: 'Discover', desc: 'Browse activities, events, and groups in your city that match your passions.', color: 'bg-blue-100 text-blue-600' },
@@ -40,9 +29,9 @@ const howItWorks = [
 ];
 
 const testimonials = [
-  { name: 'Riya M.', city: 'San Francisco', text: 'I found my hiking tribe through Olive! Best platform for meeting like-minded people.', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Riya', stars: 5 },
-  { name: 'Tom K.', city: 'New York', text: 'As someone new to the city, this platform helped me make genuine friends in just weeks!', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Tom', stars: 5 },
-  { name: 'Anita B.', city: 'Austin', text: 'The guitar jam sessions changed my weekends completely. So much fun and great people!', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Anita', stars: 5 },
+  { name: 'Himesh B.', city: 'Dehradun', text: 'I found my hiking tribe through OliveBest platform for meeting like-minded people.', avatar: 'https://api.dicebear.com/10.x/avataaars/svg?seed=Rahul', stars: 5 },
+  { name: 'Devang B.', city: 'Bangalore', text: 'As someone new to the city, this platform helped me make genuine friends in just weeks!', avatar: 'https://api.dicebear.com/10.x/micah/svg?seed=Rahul', stars: 5 },
+  { name: 'Utkarsh K.', city: 'Mumbai', text: 'The guitar jam sessions changed my weekends completely. So much fun and great people!', avatar: 'https://api.dicebear.com/10.x/open-peeps/svg?seed=Rahul', stars: 5 },
 ];
 
 export function LandingPage() {
@@ -127,8 +116,8 @@ export function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link to="/" className="flex items-center gap-2.5">
-              <img src="/logopng.png" alt="Olive Logo" className="w-12 h-12 object-contain" />
-              <span className="font-poppins font-bold text-olive-900 text-lg">
+              <img src="/logopng.png" alt="Olive Logo" className="w-14 h-14 object-contain" />
+              <span className="font-poppins font-bold text-olive-900 text-2xl tracking-tight">
                 Olive
               </span>
             </Link>
@@ -424,24 +413,7 @@ export function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-olive-950 text-olive-300 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-2">
-              <img src="/logopng.png" alt="Olive Logo" className="w-12 h-12 object-contain" />
-              <span className="font-poppins font-bold text-white text-lg">
-                Olive
-              </span>
-            </div>
-            <p className="text-sm text-olive-500">© 2025 Olive. Made with 🌿 for people who love doing things together.</p>
-            <div className="flex gap-6 text-sm">
-              <a href="#" className="hover:text-white transition-colors">Privacy</a>
-              <a href="#" className="hover:text-white transition-colors">Terms</a>
-              <a href="#" className="hover:text-white transition-colors">Contact</a>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
