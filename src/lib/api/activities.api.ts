@@ -1,5 +1,16 @@
 import api from '@/lib/axios';
-import type { Activity, CursorPaginatedResponse, Participant } from './types';
+import type { Activity, CursorPaginatedResponse } from './types';
+
+function getCurrentUserId(): string | undefined {
+  try {
+    const raw = localStorage.getItem('auth-storage');
+    if (!raw) return undefined;
+    const parsed = JSON.parse(raw);
+    return parsed?.state?.user?.id ?? undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 export interface CreateActivityData {
   title: string;
@@ -37,10 +48,14 @@ export const activitiesApi = {
     limit?: number;
     status?: string;
     timeline?: 'upcoming' | 'past';
-  }) =>
-    api
-      .get<CursorPaginatedResponse<Activity>>('/activities', { params })
-      .then((r) => r.data),
+    userId?: string;
+  }) => {
+    const userId = params?.userId ?? getCurrentUserId();
+    const queryParams = { ...params, ...(userId ? { userId } : {}) };
+    return api
+      .get<CursorPaginatedResponse<Activity>>('/activities', { params: queryParams })
+      .then((r) => r.data);
+  },
 
   /** Get a single activity by ID */
   getById: (id: string) =>
@@ -71,6 +86,11 @@ export const activitiesApi = {
     api.get<any[]>(`/activities/${id}/participants`).then((r) => r.data.map((p: any) => p.user || p)),
 
   /** Get recommended activities for current user */
-  getRecommended: () =>
-    api.get<Activity[]>('/recommendations/activities').then((r) => r.data),
+  getRecommended: () => {
+    const userId = getCurrentUserId();
+    return api
+      .get<Activity[]>('/recommendations/activities', { params: userId ? { userId } : {} })
+      .then((r) => r.data);
+  },
 };
+

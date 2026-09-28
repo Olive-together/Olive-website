@@ -65,8 +65,16 @@ export function ActivityCard({ activity, variant = 'grid' }: ActivityCardProps) 
   const hostId = activity.creator?.id ?? activity.host?.id;
   /** True when the logged-in user created / hosts this activity */
   const isHosted = !!(currentUserId && hostId && currentUserId === hostId);
+
+  const isUserInParticipants = Boolean(
+    currentUserId &&
+    (activity as any).participants?.some(
+      (p: any) => p.id === currentUserId || p.userId === currentUserId || p.user?.id === currentUserId
+    )
+  );
+
   /** True when the user has joined but did NOT host */
-  const isJoined = !isHosted && joined;
+  const isJoined = !isHosted && (joined || activity.isJoined === true || isUserInParticipants);
 
   const attendees = activity._count?.participants ?? 0;
   const capacity = activity.maxParticipants;
@@ -80,7 +88,7 @@ export function ActivityCard({ activity, variant = 'grid' }: ActivityCardProps) 
     !!(activity.startTime && new Date(activity.startTime) < new Date());
 
   const joinMutation = useMutation({
-    mutationFn: () => (joined ? activitiesApi.leave(activity.id) : activitiesApi.join(activity.id)),
+    mutationFn: () => (isJoined ? activitiesApi.leave(activity.id) : activitiesApi.join(activity.id)),
     onSuccess: () => {
       setJoined(!joined);
       queryClient.invalidateQueries({ queryKey: ['activities'] });
@@ -121,8 +129,8 @@ export function ActivityCard({ activity, variant = 'grid' }: ActivityCardProps) 
                 🎯 Hosted by you
               </span>
             ) : isJoined ? (
-              <span className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-100 text-emerald-700">
-                ✓ Already Joined
+              <span className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-olive-100 text-olive-800 border border-olive-300 flex items-center gap-1">
+                <CheckCircle className="w-3.5 h-3.5 text-olive-600" /> You're Going! ✓
               </span>
             ) : (
               <button
@@ -173,8 +181,9 @@ export function ActivityCard({ activity, variant = 'grid' }: ActivityCardProps) 
             </span>
           )}
           {isJoined && !isPast && (
-            <span className="absolute bottom-3 left-3 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-600/90 text-white backdrop-blur-sm shadow">
-              ✓ Already Joined
+            <span className="absolute bottom-3 left-3 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-olive-100/95 text-olive-800 backdrop-blur-sm shadow border border-olive-300">
+              <CheckCircle className="w-3.5 h-3.5 text-olive-600" />
+              You're Going! ✓
             </span>
           )}
 
@@ -245,22 +254,25 @@ export function ActivityCard({ activity, variant = 'grid' }: ActivityCardProps) 
               🎯 Manage Activity
             </Link>
           ) : isJoined ? (
-            /* Teal/Emerald — already joined */
-            groupChatId ? (
-              <Link
-                to={`/chat/${groupChatId}`}
-                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-semibold transition-all duration-200 bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm"
-              >
-                💬 Start Group Chat
-              </Link>
-            ) : (
+            /* Olive/Emerald badge — You're Going! ✓ */
+            <div className="flex-1 flex gap-1.5">
               <Link
                 to={`/activities/${activity.id}`}
-                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-semibold transition-all duration-200 bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm"
+                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-bold transition-all duration-200 bg-olive-100 hover:bg-olive-200 text-olive-800 border border-olive-300 shadow-sm"
               >
-                <CheckCircle className="w-4 h-4" /> Already Joined
+                <CheckCircle className="w-4 h-4 text-olive-600" />
+                <span>You're Going! ✓</span>
               </Link>
-            )
+              {groupChatId && (
+                <Link
+                  to={`/chat/${groupChatId}`}
+                  title="Group Chat"
+                  className="p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 flex items-center justify-center transition-colors"
+                >
+                  💬
+                </Link>
+              )}
+            </div>
           ) : (
             /* Default — join */
             <button
@@ -274,7 +286,7 @@ export function ActivityCard({ activity, variant = 'grid' }: ActivityCardProps) 
               )}
             >
               {joined && <CheckCircle className="w-4 h-4" />}
-              {joinMutation.isPending ? '...' : joined ? 'Joined' : 'Join Activity'}
+              {joinMutation.isPending ? '...' : joined ? "You're Going! ✓" : 'Join Activity'}
             </button>
           )}
           <button className="p-2 rounded-xl border border-olive-200 hover:bg-olive-50 transition-colors">
