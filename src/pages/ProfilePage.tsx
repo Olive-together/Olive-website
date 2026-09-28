@@ -37,23 +37,23 @@ export function ProfilePage() {
         </div>
 
         <div className="px-4 sm:px-8">
-          <div className="flex items-end justify-between -mt-12 mb-4">
+          <div className="flex items-end justify-between -mt-12 mb-4 relative z-10">
             <div className="relative">
               <img
                 src={avatar}
                 alt={displayName}
-                className="w-24 h-24 rounded-3xl ring-4 ring-white shadow-card-hover"
+                className="w-24 h-24 rounded-3xl ring-4 ring-white shadow-card-hover bg-white object-cover"
               />
               <span className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-400 rounded-full border-2 border-white" />
             </div>
             <div className="flex gap-2 mb-2">
-              <button className="p-2 rounded-xl border border-olive-200 bg-white hover:bg-olive-50 transition-colors">
+              <button className="p-2 rounded-xl border border-olive-200 bg-white hover:bg-olive-50 transition-colors cursor-pointer">
                 <Share2 className="w-4 h-4 text-olive-600" />
               </button>
-              <Link to="/settings" className="p-2 rounded-xl border border-olive-200 bg-white hover:bg-olive-50 transition-colors">
+              <Link to="/settings" className="p-2 rounded-xl border border-olive-200 bg-white hover:bg-olive-50 transition-colors cursor-pointer block">
                 <Settings className="w-4 h-4 text-olive-600" />
               </Link>
-              <Link to="/profile/edit" className="btn-primary text-sm px-4 py-2">
+              <Link to="/profile/edit" className="btn-primary text-sm px-4 py-2 cursor-pointer inline-flex">
                 <Edit className="w-4 h-4" /> Edit Profile
               </Link>
             </div>

@@ -57,6 +57,12 @@ export function CreateActivityPage() {
 
   const isOnline = watch('isOnline');
 
+  /** Keep local UI state + form field in sync */
+  const handlePricingToggle = (free: boolean) => {
+    setIsFree(free);
+    setValue('isFree', free, { shouldValidate: true });
+  };
+
   const createMutation = useMutation({
     mutationFn: (data: FormData) =>
       activitiesApi.create({
@@ -99,7 +105,7 @@ export function CreateActivityPage() {
       </button>
 
       <div className="mb-8">
-        <h1 className="page-title mb-1">Create Activity ✨</h1>
+        <h1 className="page-title mb-1">Create Activity</h1>
         <p className="text-olive-500">Fill in the details and start gathering your crew</p>
       </div>
 
@@ -237,17 +243,17 @@ export function CreateActivityPage() {
             <div className="flex gap-3">
               <button
                 type="button"
-                onClick={() => setIsFree(true)}
+                onClick={() => handlePricingToggle(true)}
                 className={`flex-1 py-3 rounded-2xl border-2 font-semibold text-sm transition-all ${isFree ? 'border-olive-500 bg-olive-500 text-white' : 'border-olive-100 text-olive-600 hover:border-olive-300'}`}
               >
-                🟢 Free
+                Free
               </button>
               <button
                 type="button"
-                onClick={() => setIsFree(false)}
+                onClick={() => handlePricingToggle(false)}
                 className={`flex-1 py-3 rounded-2xl border-2 font-semibold text-sm transition-all ${!isFree ? 'border-olive-500 bg-olive-500 text-white' : 'border-olive-100 text-olive-600 hover:border-olive-300'}`}
               >
-                💰 Paid
+                Paid
               </button>
             </div>
             {!isFree && (

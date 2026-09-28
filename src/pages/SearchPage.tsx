@@ -33,7 +33,7 @@ export function SearchPage() {
 
   return (
     <div className="flex-1 p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto w-full animate-fade-in">
-      <h1 className="page-title mb-6">Search 🔍</h1>
+      <h1 className="page-title mb-6">Search</h1>
 
       {/* Search input */}
       <div className="relative mb-6">
@@ -101,11 +101,14 @@ export function SearchPage() {
               <button
                 key={t}
                 onClick={() => setTab(t)}
-                className={`px-4 py-2 rounded-xl text-sm font-semibold capitalize transition-all ${
-                  tab === t ? 'bg-olive-500 text-white shadow-btn' : 'bg-white border border-olive-100 text-olive-600'
-                }`}
+                className={`tab-btn capitalize ${tab === t ? 'tab-btn-active' : ''}`}
               >
-                {t} {t === 'all' ? `(${totalResults})` : t === 'activities' ? `(${activityResults.length})` : `(${peopleResults.length})`}
+                {t}{' '}
+                {t === 'all'
+                  ? `(${totalResults})`
+                  : t === 'activities'
+                  ? `(${activityResults.length})`
+                  : `(${peopleResults.length})`}
               </button>
             ))}
           </div>

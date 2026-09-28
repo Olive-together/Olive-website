@@ -1,9 +1,11 @@
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Camera } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/authStore';
 import { usersApi } from '@/lib/api/users.api';
+import { mediaApi } from '@/lib/api/media.api';
 import { LocationSelector } from '@/components/LocationSelector';
 import { Controller } from 'react-hook-form';
 
@@ -27,6 +29,8 @@ const Field = ({ label, children }: { label: string; children: React.ReactNode }
 export function EditProfilePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = React.useState(false);
   const updateUser = useAuthStore((s) => s.updateUser);
   const storeUser = useAuthStore((s) => s.user);
 
@@ -61,6 +65,69 @@ export function EditProfilePage() {
     },
   });
 
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate type and size (max 2MB)
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      alert('Image must be less than 2MB');
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      // 1. Get upload signature from our backend
+      const { signature, timestamp, apiKey, cloudName, folder } = await mediaApi.getSignature('PROFILE_AVATAR');
+
+      // 2. Upload directly to Cloudinary
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('api_key', apiKey);
+      formData.append('timestamp', timestamp.toString());
+      formData.append('signature', signature);
+      formData.append('folder', folder);
+
+      const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!uploadRes.ok) {
+        throw new Error('Failed to upload image to Cloudinary');
+      }
+
+      const uploadData = await uploadRes.json();
+
+      // 3. Confirm upload with our backend
+      await mediaApi.confirmUpload({
+        publicId: uploadData.public_id,
+        url: uploadData.url,
+        secureUrl: uploadData.secure_url,
+        entityType: 'PROFILE_AVATAR',
+        format: uploadData.format,
+        width: uploadData.width,
+        height: uploadData.height,
+        bytes: uploadData.bytes,
+      });
+
+      // 4. Invalidate queries to refresh the avatar
+      queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
+      
+    } catch (error) {
+      console.error('Upload failed:', error);
+      alert('Failed to upload image. Please try again.');
+    } finally {
+      setIsUploading(false);
+      // Reset input
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   const user = profile ?? storeUser;
   const avatar = user?.profile?.avatarUrl ?? `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username}`;
 
@@ -70,17 +137,32 @@ export function EditProfilePage() {
         <ArrowLeft className="w-4 h-4" /> Back to Profile
       </button>
 
-      <h1 className="page-title mb-8">Edit Profile ✏️</h1>
+      <h1 className="page-title mb-8">Edit Profile</h1>
 
       {/* Avatar */}
       <div className="card p-6 mb-6">
         <h2 style={{ fontFamily: 'var(--font-poppins)' }} className="font-semibold text-olive-900 mb-4">Profile Photo</h2>
         <div className="flex items-center gap-5">
           <div className="relative">
-            <img src={avatar} alt="" className="w-20 h-20 rounded-3xl ring-2 ring-olive-200" />
-            <button className="absolute -bottom-1 -right-1 w-7 h-7 bg-olive-500 rounded-full flex items-center justify-center shadow-btn">
-              <Camera className="w-3.5 h-3.5 text-white" />
+            <img src={avatar} alt="" className="w-20 h-20 rounded-3xl ring-2 ring-olive-200 object-cover" />
+            <button 
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+              className="absolute -bottom-1 -right-1 w-7 h-7 bg-olive-500 rounded-full flex items-center justify-center shadow-btn disabled:opacity-50"
+            >
+              {isUploading ? (
+                <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <Camera className="w-3.5 h-3.5 text-white" />
+              )}
             </button>
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              className="hidden" 
+              accept="image/jpeg,image/png,image/webp" 
+              onChange={handleImageUpload} 
+            />
           </div>
           <div>
             <p className="text-sm font-medium text-olive-900 mb-1">Upload a new photo</p>

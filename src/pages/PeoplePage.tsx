@@ -27,7 +27,7 @@ export function PeoplePage() {
   return (
     <div className="flex-1 p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto w-full animate-fade-in">
       <div className="mb-6">
-        <h1 className="page-title mb-1">People 👥</h1>
+        <h1 className="page-title mb-1">People</h1>
         <p className="text-olive-500">
           {isLoading ? 'Loading...' : `Discover ${people.length} people with shared interests`}
         </p>

@@ -64,7 +64,7 @@ export function DashboardPage() {
       {/* Header */}
       <div className="flex items-start justify-between mb-8">
         <div>
-          <h1 className="page-title">{greeting}, {getDisplayName(profile ?? user)}! 👋</h1>
+          <h1 className="page-title">{greeting}, {getDisplayName(profile ?? user)}!</h1>
           <p className="text-olive-500 mt-1">Here's what's happening around you.</p>
         </div>
         <div className="flex items-center gap-2">

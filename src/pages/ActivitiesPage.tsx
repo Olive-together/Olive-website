@@ -3,6 +3,7 @@ import { Grid, List, Map as MapIcon, Search, X, Navigation, Clock } from 'lucide
 import { useQuery } from '@tanstack/react-query';
 import { activitiesApi } from '@/lib/api/activities.api';
 import { ActivityCard } from '@/components/ActivityCard';
+import { ActivityCardSkeleton } from '@/components/ActivityCardSkeleton';
 import { MapView } from '@/components/MapView';
 import { cn } from '@/lib/cn';
 import { LocationSelector } from '@/components/LocationSelector';
@@ -87,7 +88,7 @@ export function ActivitiesPage() {
     <div className="flex-1 p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto w-full animate-fade-in">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="page-title mb-1">Activities 🎯</h1>
+        <h1 className="page-title mb-1">Activities</h1>
         <p className="text-olive-500">
           {isLoading ? 'Loading activities...' : `${upcomingActivities.length} upcoming activities`}
         </p>
@@ -110,9 +111,9 @@ export function ActivitiesPage() {
       </div>
 
       {/* Filters row */}
-      <div className="flex flex-wrap items-center gap-3 mb-6">
+      <div className="flex flex-col gap-4 mb-6">
         {/* Categories */}
-        <div className="flex gap-2 overflow-x-auto pb-1 flex-1 min-w-0">
+        <div className="flex gap-2 overflow-x-auto pb-2 w-full custom-scrollbar">
           {CATEGORIES.map((cat) => (
             <button
               key={cat}
@@ -130,8 +131,8 @@ export function ActivitiesPage() {
         </div>
 
         {/* Location filter */}
-        <div className="flex items-center gap-2">
-          <div className="min-w-[280px]">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex-1 min-w-[280px] max-w-2xl">
             <LocationSelector
               country={selectedCountry}
               state={selectedState}
@@ -145,6 +146,8 @@ export function ActivitiesPage() {
               className="gap-2 sm:grid-cols-3"
             />
           </div>
+
+          <div className="flex flex-wrap items-center gap-2">
 
           <button
             onClick={handleUseLocation}
@@ -198,6 +201,7 @@ export function ActivitiesPage() {
               <MapIcon className="w-4 h-4" />
             </button>
           </div>
+          </div>
         </div>
       </div>
 
@@ -208,9 +212,11 @@ export function ActivitiesPage() {
         <>
           {/* ── Upcoming Activities ── */}
           {isLoading ? (
-            <div className={cn(viewMode === 'grid' ? 'grid sm:grid-cols-2 lg:grid-cols-3 gap-5' : 'flex flex-col gap-4')}>
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="card h-64 animate-pulse bg-olive-50" />
+            <div className={cn(viewMode === 'grid' ? 'grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5' : 'flex flex-col gap-4')}>
+              {Array.from({ length: viewMode === 'list' ? 4 : 8 }).map((_, i) => (
+                viewMode === 'list'
+                  ? <div key={i} className="card h-20 animate-pulse bg-olive-50 relative overflow-hidden"><div className="skeleton-shimmer absolute inset-0" /></div>
+                  : <ActivityCardSkeleton key={i} />
               ))}
             </div>
           ) : upcomingActivities.length === 0 ? (

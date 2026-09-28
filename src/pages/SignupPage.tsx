@@ -87,8 +87,11 @@ function OtpStep({ email, onVerified }: { email: string; onVerified: () => void 
           )}
 
           <input
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
             value={otp}
-            onChange={(e) => setOtp(e.target.value.slice(0, 6))}
+            onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
             placeholder="Enter 6-digit code"
             maxLength={6}
             className="input-field text-center text-2xl tracking-widest font-bold mb-4"
@@ -97,7 +100,7 @@ function OtpStep({ email, onVerified }: { email: string; onVerified: () => void 
           <button
             onClick={verify}
             disabled={otp.length !== 6 || loading}
-            className="btn-primary w-full py-3.5 text-base disabled:opacity-70"
+            className="btn-primary w-full py-3.5 text-base disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (
               <span className="flex items-center gap-2">

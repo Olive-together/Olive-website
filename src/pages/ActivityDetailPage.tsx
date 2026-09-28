@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   CalendarDays, MapPin, Users, ArrowLeft, Share2,
   Bookmark, CheckCircle, Clock, Tag, Star, MessageSquare,
-  Trash2, LogOut, AlertTriangle, X,
+  Trash2, LogOut, AlertTriangle, X, IndianRupee,
 } from 'lucide-react';
 import { activitiesApi } from '@/lib/api/activities.api';
 import { adminApi } from '@/lib/api/admin.api';
@@ -96,6 +96,84 @@ function ConfirmModal({
   );
 }
 
+// ─── Paid Disclaimer Modal ────────────────────────────────────────────────────
+interface PaidDisclaimerModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  price: number | null | undefined;
+  isPending?: boolean;
+}
+
+function PaidDisclaimerModal({ isOpen, onClose, onConfirm, price, isPending }: PaidDisclaimerModalProps) {
+  if (!isOpen) return null;
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+      style={{ backdropFilter: 'blur(10px)', background: 'rgba(0,0,0,0.5)' }}
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden"
+        style={{ animation: 'slideUpFade 0.3s cubic-bezier(0.34,1.56,0.64,1) both' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header strip */}
+        <div className="px-6 pt-6 pb-4 border-b border-amber-100 bg-gradient-to-br from-amber-50 to-orange-50">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+                <IndianRupee className="w-5 h-5 text-amber-700" />
+              </div>
+              <div>
+                <h3 style={{ fontFamily: 'var(--font-poppins)' }} className="font-bold text-lg text-olive-900 leading-tight">This is a paid activity</h3>
+                {price && <p className="text-sm text-amber-700 font-semibold mt-0.5">Approx. {price.toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 })} per person</p>}
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-full flex items-center justify-center text-olive-400 hover:text-olive-700 hover:bg-olive-100 transition-colors flex-shrink-0"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="px-6 py-5 space-y-4">
+          <p className="text-olive-700 text-sm leading-relaxed">
+            The host has marked this activity as paid. The cost listed is set entirely by the host and is payable directly to them.
+          </p>
+          <div className="rounded-2xl border border-olive-100 bg-olive-50 px-4 py-3 space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-olive-500">Platform notice</p>
+            <p className="text-sm text-olive-700 leading-relaxed">
+              This platform does not collect, process, or take any portion of the payment. All financial arrangements are solely between you and the host. You are encouraged to clarify the payment details directly with the host before participating.
+            </p>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 pb-6 flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 py-3 rounded-2xl border border-olive-200 text-olive-600 font-semibold text-sm hover:bg-olive-50 transition-colors"
+          >
+            Go Back
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={isPending}
+            className="flex-1 py-3 rounded-2xl bg-olive-500 text-white font-bold text-sm hover:bg-olive-600 transition-all duration-200 disabled:opacity-60 shadow-btn"
+            style={{ fontFamily: 'var(--font-poppins)' }}
+          >
+            {isPending ? 'Joining...' : 'Understood, Join'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function ActivityDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -110,6 +188,7 @@ export function ActivityDetailPage() {
   const [deleteMessage, setDeleteMessage] = useState('');
   const [showAdminRemoveConfirm, setShowAdminRemoveConfirm] = useState(false);
   const [adminRemoveReason, setAdminRemoveReason] = useState('');
+  const [showPaidDisclaimer, setShowPaidDisclaimer] = useState(false);
 
   const { data: activity, isLoading, isError } = useQuery({
     queryKey: ['activities', id],
@@ -210,12 +289,20 @@ export function ActivityDetailPage() {
   if (isLoading) {
     return (
       <div className="flex-1 max-w-5xl mx-auto w-full p-6 animate-fade-in">
-        <div className="h-64 rounded-3xl bg-olive-100 animate-pulse mb-6" />
+        <div className="h-64 rounded-3xl bg-olive-100 animate-pulse mb-6 relative overflow-hidden">
+          <div className="skeleton-shimmer absolute inset-0" />
+        </div>
         <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-4">
-            {Array.from({ length: 3 }).map((_, i) => <div key={i} className="card h-32 animate-pulse bg-olive-50" />)}
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="card h-32 animate-pulse bg-olive-50 relative overflow-hidden">
+                <div className="skeleton-shimmer absolute inset-0" />
+              </div>
+            ))}
           </div>
-          <div className="card h-64 animate-pulse bg-olive-50" />
+          <div className="card h-64 animate-pulse bg-olive-50 relative overflow-hidden">
+            <div className="skeleton-shimmer absolute inset-0" />
+          </div>
         </div>
       </div>
     );
@@ -248,8 +335,28 @@ export function ActivityDetailPage() {
     activity.status === 'EXPIRED' ||
     (!!startTime && new Date(startTime) < new Date());
 
+  const isPaid = activity.isFree === false;
+  const activityPrice = (activity as any).price ?? null;
+
+  const handleJoinClick = () => {
+    if (isPaid) {
+      setShowPaidDisclaimer(true);
+    } else {
+      joinMutation.mutate();
+    }
+  };
+
   return (
     <div className="flex-1 max-w-5xl mx-auto w-full animate-fade-in">
+      {/* ── Paid Disclaimer Modal ─────────────────────────────────────────── */}
+      <PaidDisclaimerModal
+        isOpen={showPaidDisclaimer}
+        onClose={() => setShowPaidDisclaimer(false)}
+        onConfirm={() => { setShowPaidDisclaimer(false); joinMutation.mutate(); }}
+        price={activityPrice}
+        isPending={joinMutation.isPending}
+      />
+
       {/* ── Leave Confirmation Modal ─────────────────────────────────────── */}
       <ConfirmModal
         isOpen={showLeaveConfirm}
@@ -323,10 +430,18 @@ export function ActivityDetailPage() {
           <div className="absolute inset-0 bg-black/20" />
         )}
         <div className="absolute bottom-5 left-5">
-          <span className="badge bg-white/90 text-olive-700 mb-2">{activity.category}</span>
-          {isPast && (
-            <span className="badge bg-gray-700/90 text-white mb-2 ml-2">Past Activity</span>
-          )}
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
+            <span className="badge bg-white/90 text-olive-700">{activity.category}</span>
+            {isPast && (
+              <span className="badge bg-gray-700/90 text-white">Past Activity</span>
+            )}
+            {isPaid && !isPast && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/95 text-white backdrop-blur-sm shadow-sm">
+                <IndianRupee className="w-3 h-3" />
+                Paid Activity
+              </span>
+            )}
+          </div>
           <h1 style={{ fontFamily: 'var(--font-poppins)' }} className="font-bold text-3xl text-white">{activity.title}</h1>
         </div>
         <div className="absolute top-4 right-4 flex gap-2">
@@ -491,11 +606,31 @@ export function ActivityDetailPage() {
               <p className="text-xs text-olive-500 mt-2">{capacity - attendees} spots remaining</p>
             </div>
 
-            <div className="flex items-center justify-between mb-5">
-              <span style={{ fontFamily: 'var(--font-poppins)' }} className="font-bold text-lg text-olive-900">
-                {activity.isFree !== false ? '🟢 Free' : `₹${activity.price}`}
-              </span>
-            </div>
+            {isPaid ? (
+              <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-3 border-b border-amber-100">
+                  <IndianRupee className="w-4 h-4 text-amber-700 flex-shrink-0" />
+                  <span style={{ fontFamily: 'var(--font-poppins)' }} className="font-bold text-amber-800 text-sm">Paid Activity</span>
+                  {activityPrice && (
+                    <span className="ml-auto font-bold text-amber-700 text-sm">
+                      {Number(activityPrice).toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 })} / person
+                    </span>
+                  )}
+                </div>
+                <p className="px-4 py-3 text-xs text-amber-700 leading-relaxed">
+                  Payment is handled directly with the host. This platform does not charge or collect any fees.
+                </p>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between mb-5">
+                <span style={{ fontFamily: 'var(--font-poppins)' }} className="font-bold text-lg text-olive-900">
+                  Free to join
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold">
+                  Free
+                </span>
+              </div>
+            )}
 
             {/* ── Join / Leave / Host / Past indicator ─────────────────── */}
             {isPast ? (
@@ -530,12 +665,12 @@ export function ActivityDetailPage() {
             ) : (
               <button
                 id="join-activity-btn"
-                onClick={() => joinMutation.mutate()}
+                onClick={handleJoinClick}
                 disabled={joinMutation.isPending}
                 className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-bold text-base transition-all duration-200 disabled:opacity-60 bg-olive-500 text-white hover:bg-olive-600 shadow-btn"
                 style={{ fontFamily: 'var(--font-poppins)' }}
               >
-                {joinMutation.isPending ? 'Joining...' : 'Join Activity'}
+                {joinMutation.isPending ? 'Joining...' : isPaid ? 'Join Paid Activity' : 'Join Activity'}
               </button>
             )}
 

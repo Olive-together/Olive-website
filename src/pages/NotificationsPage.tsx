@@ -300,7 +300,7 @@ export function NotificationsPage() {
     <div className="flex-1 p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto w-full animate-fade-in">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="page-title mb-1">Notifications 🔔</h1>
+          <h1 className="page-title mb-1">Notifications</h1>
           <p className="text-olive-500">
             {unreadCount > 0
               ? <><span className="font-semibold text-olive-700">{unreadCount}</span> unread notifications</>

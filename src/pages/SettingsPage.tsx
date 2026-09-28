@@ -89,7 +89,7 @@ export function SettingsPage() {
 
   return (
     <div className="flex-1 p-4 sm:p-6 lg:p-8 max-w-2xl mx-auto w-full animate-fade-in">
-      <h1 className="page-title mb-8">Settings ⚙️</h1>
+      <h1 className="page-title mb-8">Settings</h1>
 
       {/* ── ACCOUNT ── */}
       <div className="mb-6">
