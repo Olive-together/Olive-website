@@ -1,13 +1,18 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api/v1',
+  baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:3000',
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
 });
 
 // Attach access token from localStorage on every request
+// And ensure /api/v1 prefix is added
 api.interceptors.request.use((config) => {
+  if (config.url && config.url.startsWith('/')) {
+    config.url = `/api/v1${config.url}`;
+  }
+
   const token = localStorage.getItem('access_token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;

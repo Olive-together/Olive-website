@@ -14,28 +14,33 @@ export function OAuthCallbackPage() {
 
   useEffect(() => {
     const pick = async () => {
-      // Read the one-time access token from cookie
-      const match = document.cookie.match(/oauth_access_token=([^;]+)/);
-      if (!match) {
+      // Read tokens from URL query string
+      const params = new URLSearchParams(window.location.search);
+      const accessToken = params.get('access_token');
+      const refreshToken = params.get('refresh_token');
+
+      if (!accessToken) {
         navigate('/login');
         return;
       }
 
-      const accessToken = decodeURIComponent(match[1]);
-      // Clear the cookie
-      document.cookie = 'oauth_access_token=; Max-Age=0; path=/';
+      // Clean up the URL so tokens aren't left in browser history
+      window.history.replaceState({}, document.title, window.location.pathname);
 
       try {
         // Temporarily store in localStorage so authApi.getMe() picks it up
         localStorage.setItem('access_token', accessToken);
         const user = await authApi.getMe();
 
-        // We don't get a refresh token via cookie in this flow — store what we have
-        const refreshToken = localStorage.getItem('refresh_token') ?? '';
-        login(user, accessToken, refreshToken);
+        if (refreshToken) {
+          localStorage.setItem('refresh_token', refreshToken);
+        }
+        
+        login(user, accessToken, refreshToken || '');
         navigate('/dashboard');
       } catch {
         localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
         navigate('/login');
       }
     };
