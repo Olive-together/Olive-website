@@ -84,7 +84,7 @@ export const useNotifPrefsStore = create<NotifPrefsState>()((set, get) => ({
   resetAll: async (val) => {
     const allSame: NotificationPrefs = Object.fromEntries(
       Object.keys(defaults).map((k) => [k, val])
-    ) as NotificationPrefs;
+    ) as unknown as NotificationPrefs;
 
     // Optimistic update
     set({ prefs: allSame, saving: true });
