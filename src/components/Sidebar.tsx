@@ -57,7 +57,7 @@ export function Sidebar() {
     navigate('/login');
   };
 
-  const SidebarContent = () => (
+  const renderSidebarContent = () => (
     <div className="flex flex-col h-full">
       {/* ── Logo ── */}
       <Link
@@ -270,7 +270,7 @@ export function Sidebar() {
           />
         </button>
 
-        <SidebarContent />
+        {renderSidebarContent()}
       </aside>
 
       {/* ── Mobile: top nav bar ── */}
@@ -310,7 +310,7 @@ export function Sidebar() {
             className="relative w-[260px] h-full shadow-2xl animate-slide-up"
             style={{ backgroundColor: 'var(--bg-sidebar)' }}
           >
-            <SidebarContent />
+            {renderSidebarContent()}
           </div>
         </div>
       )}

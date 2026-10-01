@@ -47,6 +47,7 @@ import { EditProfilePage }     from '@/pages/EditProfilePage';
 import { SearchPage }          from '@/pages/SearchPage';
 import { SettingsPage }        from '@/pages/SettingsPage';
 import { NotFoundPage }        from '@/pages/NotFoundPage';
+import { OnboardingPage }      from '@/pages/OnboardingPage';
 
 import { useEffect } from 'react';
 import Lenis from 'lenis';
@@ -136,6 +137,8 @@ export default function App() {
           <Route path="/login"        element={<LoginPage />} />
           <Route path="/signup"       element={<SignupPage />} />
           <Route path="/auth/callback" element={<OAuthCallbackPage />} />
+          {/* New user onboarding — standalone, no sidebar */}
+          <Route path="/onboarding"   element={<OnboardingPage />} />
           {/* Public Static Info Pages */}
           <Route element={<PublicLayout />}>
             <Route path="/how-it-works" element={<HowItWorksPage />} />
