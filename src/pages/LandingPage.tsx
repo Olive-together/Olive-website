@@ -175,10 +175,10 @@ export function LandingPage() {
                 Olive makes it easy to turn hobbies into friendships.
               </p>
               <div className="flex flex-wrap gap-4">
-                <Link to="/signup" className="btn-primary text-base px-8 py-4">
+                <Link to={user ? "/activities" : "/signup"} className="btn-primary text-base px-8 py-4">
                   Explore Activities <ArrowRight className="w-5 h-5" />
                 </Link>
-                <Link to="/login" className="btn-secondary text-base px-8 py-4">
+                <Link to={user ? "/activities" : "/signup"} className="btn-secondary text-base px-8 py-4">
                   Create Account
                 </Link>
               </div>
@@ -584,6 +584,7 @@ function CitiesVideoSection() {
 }
 
 function UpcomingActivities() {
+  const user = useAuthStore((s) => s.user);
   const { data } = useQuery({
     queryKey: ['activities', 'landing-page'],
     queryFn: () => activitiesApi.getAll({ limit: 4, status: 'ACTIVE' }),
@@ -598,13 +599,14 @@ function UpcomingActivities() {
           <h2 className="section-title">Upcoming Activities</h2>
           <p className="text-olive-500 mt-1">Discover what's happening near you</p>
         </div>
-        <Link to="/signup" className="btn-ghost text-sm">
+        <Link to={user ? "/activities" : "/signup"} className="btn-ghost text-sm">
           View all <ChevronRight className="w-4 h-4" />
         </Link>
       </div>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      {/* Make cards horizontally scrollable */}
+      <div className="flex overflow-x-auto gap-5 pb-4 snap-x snap-mandatory hide-scrollbar">
         {activities.map((activity, index) => (
-          <div key={activity.id} className={`reveal-on-scroll delay-${Math.min((index + 1) * 100, 500)}`}>
+          <div key={activity.id} className={`shrink-0 w-[280px] sm:w-[320px] snap-start reveal-on-scroll delay-${Math.min((index + 1) * 100, 500)}`}>
             <ActivityCard activity={activity} variant="grid" />
           </div>
         ))}
@@ -627,6 +629,7 @@ const categoryImages = [
 ];
 
 function CategoriesSection() {
+  const user = useAuthStore((s) => s.user);
   const trackRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
@@ -697,18 +700,26 @@ function CategoriesSection() {
           transition: transform 0.05s ease-out; /* Smooth out RAF updates just slightly */
           will-change: transform;
         }
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .hide-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
       `}</style>
 
-      <div className="relative w-full">
+      {/* Make horizontally scrollable manually, while keeping marquee logic if they want, but typically users mean make it scrollable natively */}
+      <div className="relative w-full overflow-x-auto hide-scrollbar">
         {/* Gradient fades for edges */}
         <div className="absolute top-0 bottom-0 left-0 w-32 z-20 pointer-events-none" style={{ background: 'linear-gradient(to right, #F5F2EB, transparent)' }} />
         <div className="absolute top-0 bottom-0 right-0 w-32 z-20 pointer-events-none" style={{ background: 'linear-gradient(to left, #F5F2EB, transparent)' }} />
         
-        <div ref={trackRef} className="marquee-track py-12">
+        <div ref={trackRef} className="marquee-track py-12 px-4">
           {items.map((item, i) => (
             <Link
               key={i}
-              to="/signup"
+              to={user ? "/activities" : "/signup"}
               className="category-card flex flex-col items-center justify-center p-6 mx-4 rounded-3xl bg-white shadow-card hover:shadow-card-hover shrink-0 relative group cursor-pointer"
               style={{ width: '240px', height: '240px' }}
             >

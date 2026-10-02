@@ -37,7 +37,10 @@ export function LoginPage() {
       
       const user = await authApi.getMe();
       login(user, tokens.accessToken, tokens.refreshToken);
-      navigate('/dashboard');
+
+      // Redirect new users (no display name or avatar) to onboarding
+      const isNewUser = !user.profile?.displayName && !user.profile?.avatarUrl;
+      navigate(isNewUser ? '/onboarding' : '/dashboard');
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??

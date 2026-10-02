@@ -37,7 +37,10 @@ export function OAuthCallbackPage() {
         }
         
         login(user, accessToken, refreshToken || '');
-        navigate('/dashboard');
+        
+        // Redirect new users (no display name or avatar) to onboarding
+        const isNewUser = !user.profile?.displayName && !user.profile?.avatarUrl;
+        navigate(isNewUser ? '/onboarding' : '/dashboard');
       } catch {
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
