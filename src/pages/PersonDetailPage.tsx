@@ -1,17 +1,157 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { MapPin, MessageCircle, UserPlus, UserCheck, CalendarDays, Star } from 'lucide-react';
+import {
+  MapPin,
+  MessageCircle,
+  UserPlus,
+  UserCheck,
+  CalendarDays,
+  Star,
+  MoreVertical,
+  ShieldOff,
+  Flag,
+} from 'lucide-react';
 import { usersApi } from '@/lib/api/users.api';
 import { activitiesApi } from '@/lib/api/activities.api';
 import { connectionsApi } from '@/lib/api/connections.api';
-import { useState } from 'react';
+import { blocksApi } from '@/lib/api/blocks.api';
+import { useState, useRef, useEffect } from 'react';
 import { chatApi } from '@/lib/api/chat.api';
 import { useAuthStore } from '@/store/authStore';
 import { cn } from '@/lib/cn';
 import { getCoverImage } from '@/lib/getImage';
+import { BlockConfirmModal } from '@/components/BlockConfirmModal';
+import { ReportUserModal } from '@/components/ReportUserModal';
 
 function getAvatar(avatarUrl: string | null, username: string) {
   return avatarUrl ?? `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
+}
+
+/** Dropdown menu for block/report actions */
+function ProfileActionMenu({
+  targetUserId,
+  displayName,
+}: {
+  targetUserId: string;
+  displayName: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [showBlockModal, setShowBlockModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
+
+  const { data: blockStatus } = useQuery({
+    queryKey: ['block-status', targetUserId],
+    queryFn: () => blocksApi.getBlockStatus(targetUserId),
+    staleTime: 30_000,
+  });
+
+  const isBlocked = blockStatus?.isBlocked ?? false;
+
+  const blockMutation = useMutation({
+    mutationFn: () =>
+      isBlocked
+        ? blocksApi.unblockUser(targetUserId)
+        : blocksApi.blockUser(targetUserId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['block-status', targetUserId] });
+      queryClient.invalidateQueries({ queryKey: ['people'] });
+      setShowBlockModal(false);
+    },
+  });
+
+  // Close menu on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    if (open) document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  return (
+    <>
+      <div className="relative" ref={menuRef}>
+        <button
+          id="profile-action-menu-trigger"
+          onClick={() => setOpen((p) => !p)}
+          className="w-9 h-9 rounded-2xl flex items-center justify-center transition-colors"
+          style={{
+            border: '1.5px solid var(--border-subtle)',
+            background: 'var(--bg-card)',
+            color: 'var(--text-muted)',
+          }}
+          aria-label="More actions"
+          aria-expanded={open}
+        >
+          <MoreVertical className="w-4 h-4" />
+        </button>
+
+        {open && (
+          <div
+            className="absolute right-0 top-11 w-48 rounded-2xl shadow-xl overflow-hidden z-20 animate-scale-in"
+            style={{
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border-subtle)',
+              transformOrigin: 'top right',
+            }}
+          >
+            <button
+              id="profile-block-user-btn"
+              onClick={() => {
+                setOpen(false);
+                setShowBlockModal(true);
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors text-left"
+              style={{ color: 'var(--text-secondary)' }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-hover)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+            >
+              <ShieldOff className="w-4 h-4 flex-shrink-0" />
+              {isBlocked ? 'Unblock user' : 'Block user'}
+            </button>
+
+            <div style={{ borderTop: '1px solid var(--border-subtle)' }} />
+
+            <button
+              id="profile-report-user-btn"
+              onClick={() => {
+                setOpen(false);
+                setShowReportModal(true);
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors text-left text-red-500"
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(239,68,68,0.06)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+            >
+              <Flag className="w-4 h-4 flex-shrink-0" />
+              Report user
+            </button>
+          </div>
+        )}
+      </div>
+
+      {showBlockModal && (
+        <BlockConfirmModal
+          displayName={displayName}
+          isBlocked={isBlocked}
+          isPending={blockMutation.isPending}
+          onConfirm={() => blockMutation.mutate()}
+          onClose={() => setShowBlockModal(false)}
+        />
+      )}
+
+      {showReportModal && (
+        <ReportUserModal
+          userId={targetUserId}
+          displayName={displayName}
+          onClose={() => setShowReportModal(false)}
+        />
+      )}
+    </>
+  );
 }
 
 export function PersonDetailPage() {
@@ -42,16 +182,34 @@ export function PersonDetailPage() {
 
   const myId = useAuthStore((s) => s.user?.id);
 
-  const isConnected = person ? allConnections.some((c: any) => c.fromUser?.id === person.id || c.toUser?.id === person.id) : false;
-  const pendingConn = person ? pendingConnections.find((c: any) => c.fromUser?.id === person.id || c.toUser?.id === person.id) : null;
+  const isConnected = person
+    ? allConnections.some(
+        (c: any) => c.fromUser?.id === person.id || c.toUser?.id === person.id,
+      )
+    : false;
+  const pendingConn = person
+    ? pendingConnections.find(
+        (c: any) => c.fromUser?.id === person.id || c.toUser?.id === person.id,
+      )
+    : null;
   const isPendingReceived = pendingConn && pendingConn.toUser?.id === myId;
   const isPendingSent = pendingConn && pendingConn.fromUser?.id === myId;
-  const connectionStatus = isConnected ? 'CONNECTED' : isPendingReceived ? 'RECEIVED' : isPendingSent ? 'SENT' : 'NONE';
+  const connectionStatus = isConnected
+    ? 'CONNECTED'
+    : isPendingReceived
+    ? 'RECEIVED'
+    : isPendingSent
+    ? 'SENT'
+    : 'NONE';
 
   const connectMutation = useMutation({
     mutationFn: () => {
-      if (connectionStatus === 'CONNECTED' || connectionStatus === 'SENT' || connectionStatus === 'RECEIVED') {
-        return Promise.resolve(null as any); // Do nothing
+      if (
+        connectionStatus === 'CONNECTED' ||
+        connectionStatus === 'SENT' ||
+        connectionStatus === 'RECEIVED'
+      ) {
+        return Promise.resolve(null as any);
       }
       return connectionsApi.send(person!.id);
     },
@@ -62,7 +220,7 @@ export function PersonDetailPage() {
       if (err.response?.status === 409) {
         queryClient.invalidateQueries({ queryKey: ['connections'] });
       }
-    }
+    },
   });
 
   const acceptMutation = useMutation({
@@ -84,19 +242,35 @@ export function PersonDetailPage() {
       <div className="flex-1 max-w-4xl mx-auto w-full p-6 animate-fade-in">
         <div className="h-52 rounded-b-3xl bg-olive-100 animate-pulse mb-6" />
         <div className="space-y-4 px-8">
-          {Array.from({ length: 4 }).map((_, i) => <div key={i} className="card h-20 animate-pulse bg-olive-50" />)}
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="card h-20 animate-pulse bg-olive-50" />
+          ))}
         </div>
       </div>
     );
   }
 
   if (isError || !person) {
+    const status = (isError as any)?.response?.status;
+    const isForbidden = status === 403;
     return (
       <div className="flex-1 flex items-center justify-center text-center p-8">
         <div>
-          <div className="text-6xl mb-4">👋</div>
-          <h3 style={{ fontFamily: 'var(--font-poppins)' }} className="font-bold text-xl text-olive-900 mb-2">User not found</h3>
-          <Link to="/people" className="btn-primary text-sm mt-4">Browse People</Link>
+          <div className="text-6xl mb-4">{isForbidden ? '🔒' : '👋'}</div>
+          <h3
+            style={{ fontFamily: 'var(--font-poppins)' }}
+            className="font-bold text-xl text-olive-900 mb-2"
+          >
+            {isForbidden ? 'Profile not accessible' : 'User not found'}
+          </h3>
+          <p className="text-olive-500 text-sm mb-4">
+            {isForbidden
+              ? "You can only view profiles of people you've shared an activity with."
+              : 'This user does not exist or has been removed.'}
+          </p>
+          <Link to="/people" className="btn-primary text-sm mt-2">
+            Back to People
+          </Link>
         </div>
       </div>
     );
@@ -105,6 +279,7 @@ export function PersonDetailPage() {
   const displayName = person.profile?.displayName ?? person.username;
   const avatar = getAvatar(person.profile?.avatarUrl ?? null, person.username);
   const rep = person.reputationSummary;
+  const isSelf = person.id === myId;
 
   return (
     <div className="flex-1 max-w-4xl mx-auto w-full animate-fade-in">
@@ -117,17 +292,25 @@ export function PersonDetailPage() {
         {/* Avatar + actions */}
         <div className="flex items-end justify-between -mt-12 mb-5">
           <div className="relative">
-            <img src={avatar} alt={displayName} className="w-24 h-24 rounded-3xl ring-4 ring-white shadow-card-hover" />
+            <img
+              src={avatar}
+              alt={displayName}
+              className="w-24 h-24 rounded-3xl ring-4 ring-white shadow-card-hover"
+            />
             <span className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-400 rounded-full border-2 border-white" />
           </div>
-          <div className="flex gap-2 mb-1">
-            <button 
+
+          <div className="flex gap-2 mb-1 items-center">
+            {/* Message button */}
+            <button
               onClick={() => messageMutation.mutate()}
               disabled={messageMutation.isPending}
               className="btn-secondary text-sm py-2 px-4 flex items-center gap-1.5"
             >
               <MessageCircle className="w-4 h-4" /> Message
             </button>
+
+            {/* Connect / Accept */}
             {connectionStatus === 'RECEIVED' ? (
               <button
                 onClick={() => acceptMutation.mutate(pendingConn!.id)}
@@ -140,35 +323,70 @@ export function PersonDetailPage() {
               <button
                 onClick={() => connectMutation.mutate()}
                 disabled={connectMutation.isPending || connectionStatus !== 'NONE'}
-                className={cn('text-sm py-2 px-4 flex items-center gap-1.5 rounded-2xl font-semibold transition-all disabled:opacity-60', connectionStatus !== 'NONE' ? 'btn-secondary' : 'btn-primary')}
+                className={cn(
+                  'text-sm py-2 px-4 flex items-center gap-1.5 rounded-2xl font-semibold transition-all disabled:opacity-60',
+                  connectionStatus !== 'NONE' ? 'btn-secondary' : 'btn-primary',
+                )}
               >
-                {connectionStatus === 'CONNECTED' ? <UserCheck className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
-                {connectionStatus === 'CONNECTED' ? 'Connected' : connectionStatus === 'SENT' ? 'Pending' : 'Connect'}
+                {connectionStatus === 'CONNECTED' ? (
+                  <UserCheck className="w-4 h-4" />
+                ) : (
+                  <UserPlus className="w-4 h-4" />
+                )}
+                {connectionStatus === 'CONNECTED'
+                  ? 'Connected'
+                  : connectionStatus === 'SENT'
+                  ? 'Pending'
+                  : 'Connect'}
               </button>
+            )}
+
+            {/* Block / Report menu — only shown for other users */}
+            {!isSelf && (
+              <ProfileActionMenu targetUserId={person.id} displayName={displayName} />
             )}
           </div>
         </div>
 
         {/* Info */}
         <div className="mb-6">
-          <h1 style={{ fontFamily: 'var(--font-poppins)' }} className="font-bold text-2xl text-olive-900">{displayName}</h1>
+          <h1
+            style={{ fontFamily: 'var(--font-poppins)' }}
+            className="font-bold text-2xl text-olive-900"
+          >
+            {displayName}
+          </h1>
           <p className="text-olive-500 text-sm">@{person.username}</p>
-          {person.profile?.bio && <p className="text-olive-700 font-medium mt-1">{person.profile.bio}</p>}
+          {person.profile?.bio && (
+            <p className="text-olive-700 font-medium mt-1">{person.profile.bio}</p>
+          )}
           <div className="flex items-center gap-4 mt-2 text-sm text-olive-500">
             {person.profile?.city && (
-              <span className="flex items-center gap-1"><MapPin className="w-4 h-4" />{person.profile.city}</span>
+              <span className="flex items-center gap-1">
+                <MapPin className="w-4 h-4" />
+                {person.profile.city}
+              </span>
             )}
-            <span className="flex items-center gap-1"><Star className="w-4 h-4 fill-amber-400 text-amber-400" />Level {rep?.level ?? 1}</span>
+            <span className="flex items-center gap-1">
+              <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+              Level {rep?.level ?? 1}
+            </span>
           </div>
 
-          {(person.userInterests && person.userInterests.length > 0) || (person.userSkills && person.userSkills.length > 0) ? (
+          {(person.userInterests && person.userInterests.length > 0) ||
+          (person.userSkills && person.userSkills.length > 0) ? (
             <div className="mt-4 space-y-3">
               {person.userInterests && person.userInterests.length > 0 && (
                 <div>
-                  <p className="text-xs font-semibold text-olive-400 uppercase tracking-wider mb-2">Interests</p>
+                  <p className="text-xs font-semibold text-olive-400 uppercase tracking-wider mb-2">
+                    Interests
+                  </p>
                   <div className="flex flex-wrap gap-2">
                     {person.userInterests.map((ui: any) => (
-                      <span key={ui.interest.name} className="px-2.5 py-1 bg-olive-100 text-olive-700 text-xs rounded-full">
+                      <span
+                        key={ui.interest.name}
+                        className="px-2.5 py-1 bg-olive-100 text-olive-700 text-xs rounded-full"
+                      >
                         {ui.interest.name}
                       </span>
                     ))}
@@ -177,10 +395,15 @@ export function PersonDetailPage() {
               )}
               {person.userSkills && person.userSkills.length > 0 && (
                 <div>
-                  <p className="text-xs font-semibold text-olive-400 uppercase tracking-wider mb-2">Skills</p>
+                  <p className="text-xs font-semibold text-olive-400 uppercase tracking-wider mb-2">
+                    Skills
+                  </p>
                   <div className="flex flex-wrap gap-2">
                     {person.userSkills.map((us: any) => (
-                      <span key={us.skill.name} className="px-2.5 py-1 bg-olive-100 text-olive-700 text-xs rounded-full border border-olive-200">
+                      <span
+                        key={us.skill.name}
+                        className="px-2.5 py-1 bg-olive-100 text-olive-700 text-xs rounded-full border border-olive-200"
+                      >
                         {us.skill.name}
                       </span>
                     ))}
@@ -199,7 +422,12 @@ export function PersonDetailPage() {
             { label: 'Points', value: rep?.totalPoints ?? 0 },
           ].map(({ label, value }) => (
             <div key={label} className="card p-4 text-center">
-              <p style={{ fontFamily: 'var(--font-poppins)' }} className="font-bold text-2xl text-olive-900">{value}</p>
+              <p
+                style={{ fontFamily: 'var(--font-poppins)' }}
+                className="font-bold text-2xl text-olive-900"
+              >
+                {value}
+              </p>
               <p className="text-xs text-olive-500">{label}</p>
             </div>
           ))}
