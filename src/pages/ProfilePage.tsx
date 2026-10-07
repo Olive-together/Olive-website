@@ -5,9 +5,11 @@ import { useAuthStore } from '@/store/authStore';
 import { usersApi } from '@/lib/api/users.api';
 import { activitiesApi } from '@/lib/api/activities.api';
 import { getCoverImage } from '@/lib/getImage';
+import { useShare } from '@/lib/useShare';
 
 export function ProfilePage() {
   const storeUser = useAuthStore((s) => s.user);
+  const share = useShare();
 
   const { data: profile } = useQuery({
     queryKey: ['users', 'me'],
@@ -47,7 +49,11 @@ export function ProfilePage() {
               <span className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-400 rounded-full border-2 border-white" />
             </div>
             <div className="flex gap-2 mb-2">
-              <button className="p-2 rounded-xl border border-olive-200 bg-white hover:bg-olive-50 transition-colors cursor-pointer">
+              <button
+                onClick={() => user?.username && share({ type: 'profile', username: user.username, displayName })}
+                title="Share profile"
+                className="p-2 rounded-xl border border-olive-200 bg-white hover:bg-olive-50 transition-colors cursor-pointer"
+              >
                 <Share2 className="w-4 h-4 text-olive-600" />
               </button>
               <Link to="/settings" className="p-2 rounded-xl border border-olive-200 bg-white hover:bg-olive-50 transition-colors cursor-pointer block">

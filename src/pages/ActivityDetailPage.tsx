@@ -14,6 +14,7 @@ import '@/lib/leaflet-init';
 import { cn } from '@/lib/cn';
 import { getCoverImage } from '@/lib/getImage';
 import { useAuthStore } from '@/store/authStore';
+import { useShare } from '@/lib/useShare';
 
 function formatDate(iso: string | null | undefined) {
   if (!iso) return 'TBD';
@@ -181,6 +182,7 @@ export function ActivityDetailPage() {
   const queryClient = useQueryClient();
   const currentUser = useAuthStore((s) => s.user);
   const isAdmin = currentUser?.role === 'ADMIN';
+  const share = useShare();
 
   // Modal states
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
@@ -448,7 +450,11 @@ export function ActivityDetailPage() {
           <button onClick={() => setSaved(!saved)} className="w-9 h-9 bg-white/90 rounded-full flex items-center justify-center hover:bg-white transition-colors">
             <Bookmark className={cn('w-4 h-4', saved ? 'fill-olive-500 text-olive-500' : 'text-olive-600')} />
           </button>
-          <button className="w-9 h-9 bg-white/90 rounded-full flex items-center justify-center hover:bg-white transition-colors">
+          <button
+            onClick={() => share({ type: 'activity', id: id!, title: activity?.title })}
+            title="Share activity"
+            className="w-9 h-9 bg-white/90 rounded-full flex items-center justify-center hover:bg-white transition-colors"
+          >
             <Share2 className="w-4 h-4 text-olive-600" />
           </button>
         </div>
@@ -686,7 +692,10 @@ export function ActivityDetailPage() {
               </button>
             )}
 
-            <button className="w-full mt-3 flex items-center justify-center gap-2 py-3 rounded-2xl border border-olive-200 text-olive-600 font-medium text-sm hover:bg-olive-50 transition-colors">
+            <button
+              onClick={() => share({ type: 'activity', id: id!, title: activity?.title })}
+              className="w-full mt-3 flex items-center justify-center gap-2 py-3 rounded-2xl border border-olive-200 text-olive-600 font-medium text-sm hover:bg-olive-50 transition-colors"
+            >
               <Share2 className="w-4 h-4" /> Share with Friends
             </button>
 
