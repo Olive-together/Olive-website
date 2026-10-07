@@ -6,6 +6,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { activitiesApi } from '@/lib/api/activities.api';
 import type { Activity } from '@/lib/api/types';
 import { getCoverImage } from '@/lib/getImage';
+import { useShare } from '@/lib/useShare';
 
 /** Reads the logged-in user's ID from the persisted Zustand auth store. */
 function getCurrentUserId(): string | null {
@@ -53,6 +54,7 @@ export function ActivityCard({ activity, variant = 'grid' }: ActivityCardProps) 
   const [joined, setJoined] = useState(activity.isJoined ?? false);
   const [saved, setSaved] = useState(false);
   const queryClient = useQueryClient();
+  const share = useShare();
 
   useEffect(() => {
     if (activity.isJoined !== undefined) {
@@ -289,7 +291,11 @@ export function ActivityCard({ activity, variant = 'grid' }: ActivityCardProps) 
               {joinMutation.isPending ? '...' : joined ? "You're Going! ✓" : 'Join Activity'}
             </button>
           )}
-          <button className="p-2 rounded-xl border border-olive-200 hover:bg-olive-50 transition-colors">
+          <button
+            onClick={(e) => { e.preventDefault(); share({ type: 'activity', id: activity.id, title: activity.title }); }}
+            title="Share activity"
+            className="p-2 rounded-xl border border-olive-200 hover:bg-olive-50 transition-colors"
+          >
             <Share2 className="w-4 h-4 text-olive-500" />
           </button>
         </div>
