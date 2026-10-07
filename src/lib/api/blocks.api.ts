@@ -19,7 +19,7 @@ export const blocksApi = {
 
   /** Unblock a user by their ID */
   unblockUser: (blockedUserId: string) =>
-    api.delete(`/blocks/${blockedUserId}`),
+    api.delete(`/blocks/${blockedUserId}`).then(() => ({ id: blockedUserId })),
 
   /** Get the current user's block list */
   getBlockList: () =>
