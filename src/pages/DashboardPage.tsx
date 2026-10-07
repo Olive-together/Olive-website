@@ -11,6 +11,7 @@ import { notificationsApi } from '@/lib/api/notifications.api';
 import { ActivityCard } from '@/components/ActivityCard';
 import type { Activity, UserProfile } from '@/lib/api/types';
 
+
 function getDisplayName(user: UserProfile | null) {
   if (!user) return 'there';
   return user.profile?.displayName?.split(' ')[0] ?? user.username;
@@ -29,11 +30,6 @@ export function DashboardPage() {
   const { data: recommendedActivities = [] } = useQuery({
     queryKey: ['recommendations', 'activities'],
     queryFn: activitiesApi.getRecommended,
-  });
-
-  const { data: recommendedPeople = [] } = useQuery({
-    queryKey: ['recommendations', 'people'],
-    queryFn: usersApi.getRecommended,
   });
 
   const { data: unreadData } = useQuery({
@@ -138,45 +134,15 @@ export function DashboardPage() {
               <Link to="/activities/create" className="btn-primary w-full text-sm py-3">
                 <Plus className="w-4 h-4" /> Create Activity
               </Link>
-              <Link to="/search" className="btn-secondary w-full text-sm py-3">
-                <Search className="w-4 h-4" /> Discover People
+              <Link to="/activities" className="btn-secondary w-full text-sm py-3">
+                <Search className="w-4 h-4" /> Browse Activities
+              </Link>
+              <Link to="/people" className="btn-secondary w-full text-sm py-3">
+                <Users className="w-4 h-4" /> People You've Met
               </Link>
             </div>
           </div>
 
-          {/* People You May Know */}
-          {recommendedPeople.length > 0 && (
-            <div className="card p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h3 style={{ fontFamily: 'var(--font-poppins)' }} className="font-semibold text-olive-900">People You May Know</h3>
-                <Link to="/people" className="text-xs text-olive-500 hover:text-olive-700">View all</Link>
-              </div>
-              <div className="space-y-3">
-                {recommendedPeople.slice(0, 3).map((person: UserProfile) => (
-                  <div key={person.id} className="flex items-center gap-3">
-                    <div className="relative flex-shrink-0">
-                      <img
-                        src={person.profile?.avatarUrl ?? `https://api.dicebear.com/7.x/avataaars/svg?seed=${person.username}`}
-                        alt={person.profile?.displayName ?? person.username}
-                        className="w-10 h-10 rounded-full ring-2 ring-olive-100"
-                      />
-                      <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-olive-900 truncate">{person.profile?.displayName ?? person.username}</p>
-                      <p className="text-xs text-olive-500 truncate">@{person.username}{person.profile?.city ? ` · ${person.profile.city}` : ''}</p>
-                    </div>
-                    <Link
-                      to={`/people/${person.username}`}
-                      className="flex-shrink-0 px-3 py-1 text-xs font-semibold rounded-xl bg-olive-100 text-olive-700 hover:bg-olive-200 transition-colors"
-                    >
-                      View
-                    </Link>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* User card */}
           {(profile ?? user) && (

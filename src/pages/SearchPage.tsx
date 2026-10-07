@@ -154,10 +154,11 @@ export function SearchPage() {
               {/* People */}
               {(tab === 'all' || tab === 'people') && peopleResults.length > 0 && (
                 <div>
-                  <h2 style={{ fontFamily: 'var(--font-poppins)' }} className="font-semibold text-olive-800 mb-3 flex items-center gap-2">
+                  <h2 style={{ fontFamily: 'var(--font-poppins)' }} className="font-semibold text-olive-800 mb-1 flex items-center gap-2">
                     <Users className="w-4 h-4 text-olive-500" />
                     People ({peopleResults.length})
                   </h2>
+                  <p className="text-xs text-olive-400 mb-3">Showing people you've met through shared activities</p>
                   <div className="grid sm:grid-cols-2 gap-3">
                     {peopleResults.map((p) => (
                       <Link key={p.id} to={`/people/${p.username}`} className="card-hover flex items-center gap-3 p-4">
