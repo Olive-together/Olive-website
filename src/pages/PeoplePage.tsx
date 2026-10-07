@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Search, X, Users, CalendarDays, ArrowRight, MoreVertical, ShieldOff, Flag } from 'lucide-react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { usersApi } from '@/lib/api/users.api';
 import { blocksApi } from '@/lib/api/blocks.api';
@@ -204,12 +204,12 @@ export function PeoplePage() {
     queryKey: ['people', { search: debouncedSearch, page }],
     queryFn: () =>
       usersApi.getPeople({ page, limit: 20, search: debouncedSearch || undefined }),
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
   });
 
-  const people = data?.items ?? [];
-  const hasMore = data?.hasMore ?? false;
-  const total = data?.total ?? 0;
+  const people: ActivityConnectionPerson[] = data?.items ?? [];
+  const hasMore: boolean = data?.hasMore ?? false;
+  const total: number = data?.total ?? 0;
 
   return (
     <div className="flex-1 p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto w-full animate-fade-in">
