@@ -4,7 +4,7 @@ import {
   User, Search, Settings, LogOut, Menu, X,
   ShieldCheck, ChevronRight,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/authStore';
 import { notificationsApi } from '@/lib/api/notifications.api';
@@ -56,6 +56,16 @@ export function Sidebar() {
     logout();
     navigate('/login');
   };
+
+  // Lock body scroll when mobile drawer is open so background doesn't scroll
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [mobileOpen]);
 
   const renderSidebarContent = () => (
     <div className="flex flex-col h-full">
@@ -301,15 +311,30 @@ export function Sidebar() {
       {/* ── Mobile drawer ── */}
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-40 flex">
+          {/* Backdrop */}
           <div
             className="absolute inset-0"
             style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}
             onClick={() => setMobileOpen(false)}
           />
+          {/* Drawer panel — full-height, internal scroll, profile always visible */}
           <div
-            className="relative w-[260px] h-full shadow-2xl animate-slide-up"
-            style={{ backgroundColor: 'var(--bg-sidebar)' }}
+            className="relative flex flex-col w-[280px] shadow-2xl animate-slide-up"
+            style={{
+              backgroundColor: 'var(--bg-sidebar)',
+              height: '100dvh',         // dynamic viewport height
+              maxHeight: '100dvh',
+              overflowY: 'auto',        // ONLY the drawer scrolls
+            }}
           >
+            {/* Close button */}
+            <button
+              onClick={() => setMobileOpen(false)}
+              className="absolute top-4 right-4 z-10 p-1.5 rounded-xl transition-colors"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              <X className="w-5 h-5" />
+            </button>
             {renderSidebarContent()}
           </div>
         </div>

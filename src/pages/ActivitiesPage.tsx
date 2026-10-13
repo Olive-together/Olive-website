@@ -31,9 +31,13 @@ export function ActivitiesPage() {
   };
 
   // Upcoming activities (ACTIVE + date in future or TBD)
+  // Poll every 8 s so newly-raised activities appear without a manual refresh
   const { data: upcomingData, isLoading: upcomingLoading } = useQuery({
     queryKey: ['activities', 'upcoming', baseParams],
     queryFn: () => activitiesApi.getAll({ ...baseParams, timeline: 'upcoming', limit: 50 }),
+    staleTime: 0,           // always consider stale so interval fires immediately
+    refetchInterval: 8_000, // silent background poll every 8 s
+    refetchIntervalInBackground: false, // pause when tab is hidden
   });
 
   // Past activities (COMPLETED / EXPIRED / past-dated)
