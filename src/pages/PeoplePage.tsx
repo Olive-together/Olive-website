@@ -205,6 +205,9 @@ export function PeoplePage() {
     queryFn: () =>
       usersApi.getPeople({ page, limit: 20, search: debouncedSearch || undefined }),
     placeholderData: keepPreviousData,
+    staleTime: 2 * 60 * 1000,   // show cached data instantly for 2 min
+    refetchInterval: 30_000,    // quietly refresh every 30 s
+    refetchIntervalInBackground: false,
   });
 
   const people: ActivityConnectionPerson[] = data?.items ?? [];

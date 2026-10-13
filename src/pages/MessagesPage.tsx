@@ -239,6 +239,9 @@ export function MessagesPage() {
   const { data: conversations = [], refetch: refetchConversations } = useQuery({
     queryKey: ['conversations'],
     queryFn: () => chatApi.getConversations(),
+    staleTime: 0,            // always refetch — conversations change often
+    refetchInterval: 10_000, // poll every 10 s for new conversations
+    refetchIntervalInBackground: false,
   });
 
   useEffect(() => {
@@ -256,6 +259,8 @@ export function MessagesPage() {
     queryKey: ['messages', selectedConvId],
     queryFn: () => chatApi.getMessages(selectedConvId!),
     enabled: !!selectedConvId,
+    staleTime: 0,
+    gcTime: 10 * 60 * 1000,
   });
 
   useEffect(() => {
@@ -285,16 +290,11 @@ export function MessagesPage() {
     }
   }, [selectedConvId, accessToken]);
 
-  // Pause Lenis smooth scroll and lock the body scroll while the
-  // messages page is active so each panel scrolls independently.
+  // Pause Lenis smooth scroll while messages page is active
+  // (AppLayout already sets overflow:hidden on the outer container).
   useEffect(() => {
     lenisStore.pause();
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      lenisStore.resume();
-      document.body.style.overflow = prevOverflow;
-    };
+    return () => { lenisStore.resume(); };
   }, []);
 
   useEffect(() => {
@@ -345,7 +345,9 @@ export function MessagesPage() {
   const isGroupConv = selectedConv?.type === 'GROUP' || (canShowChat && !selectedConv);
 
   return (
-    <div className="flex-1 flex h-full overflow-hidden animate-fade-in">
+    // flex-1 fills the remaining space inside AppLayout's 100dvh fixed container.
+    // The parent already handles keyboard-aware resizing via dvh.
+    <div className="flex flex-1 overflow-hidden animate-fade-in">
 
       {/* ══ Conversation List Panel ══════════════════════════════════════════ */}
       <div
