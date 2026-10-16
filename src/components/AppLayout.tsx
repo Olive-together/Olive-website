@@ -24,13 +24,14 @@ export function AppLayout() {
   // Track virtual viewport for mobile devices to handle keyboard gracefully
   useVisualViewport();
 
-  // All authenticated pages use their own overflow-y-auto containers, so the global
-  // Lenis smooth-scroll (which targets document.documentElement) must be paused here.
-  // Without this, Lenis intercepts wheel events and prevents mouse/touchpad scrolling
-  // inside the <main> overflow container (dashboard, activities, etc.).
+  // Lenis v1.3.26 calls event.preventDefault() on wheel events even when lenis.stop()
+  // is set (see lenis.mjs:613). The ONLY way to restore native scroll in overflow-y:auto
+  // containers (Dashboard, Activities, etc.) is to fully destroy the Lenis instance so
+  // its wheel listeners are removed. lenisStore.destroy() does this; recreate() restores
+  // it when returning to public pages that need smooth-scroll.
   useEffect(() => {
-    lenisStore.pause();
-    return () => { lenisStore.resume(); };
+    lenisStore.destroy();
+    return () => { lenisStore.recreate(); };
   }, []);
 
   const activeConvId = useChatUIStore((s) => s.activeConversationId);
@@ -76,11 +77,15 @@ export function AppLayout() {
       */}
       <main
         className={cn(
-          'flex-1 flex flex-col min-w-0',
+          'flex-1 min-w-0',
+          // Messages & chat need flex-col so the chat panel fills height properly
+          (isMobileChatActive || isMessagesPage) && 'flex flex-col',
           isMobileChatActive
             ? 'p-0 overflow-hidden'
             : isMessagesPage
             ? 'pt-14 pb-16 lg:pt-0 lg:pb-0 overflow-hidden'
+            // Standard pages: plain block scroll container — do NOT use flex-col here,
+            // otherwise flex-1 children fill the exact height and overflow never triggers
             : 'pt-14 pb-16 lg:pt-0 lg:pb-0 overflow-y-auto',
         )}
       >
