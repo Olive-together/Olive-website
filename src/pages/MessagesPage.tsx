@@ -9,7 +9,6 @@ import { useAuthStore } from '@/store/authStore';
 import { cn } from '@/lib/cn';
 import type { Message, Conversation } from '@/lib/api/types';
 import { useLocation } from 'react-router-dom';
-import { lenisStore } from '@/lib/lenisStore';
 import { useChatUIStore } from '@/store/chatUIStore';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -301,12 +300,7 @@ export function MessagesPage() {
     }
   }, [selectedConvId, accessToken]);
 
-  // Pause Lenis smooth scroll while messages page is active
-  // (AppLayout already sets overflow:hidden on the outer container).
-  useEffect(() => {
-    lenisStore.pause();
-    return () => { lenisStore.resume(); };
-  }, []);
+  // Note: Lenis is already destroyed by AppLayout for all authenticated pages.
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

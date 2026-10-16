@@ -82,25 +82,38 @@ function PageLoader() {
 
 export default function App() {
   useEffect(() => {
-    // 1. Initialize Lenis for buttery smooth scrolling
-    const lenis = new Lenis({
-      duration: 1.2,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      orientation: 'vertical',
-      gestureOrientation: 'vertical',
-      smoothWheel: true,
-      wheelMultiplier: 1,
-      touchMultiplier: 2,
-    });
-    lenisStore.set(lenis);
-
+    // RAF loop id — kept outside so it can be cancelled/restarted when Lenis is recreated
     let frameId = 0;
 
-    function raf(time: number) {
-      lenis.raf(time);
+    // Factory creates a fresh Lenis instance and starts the RAF loop
+    const createLenis = () => {
+      const lenis = new Lenis({
+        duration: 1.2,
+        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+        orientation: 'vertical',
+        gestureOrientation: 'vertical',
+        smoothWheel: true,
+        wheelMultiplier: 1,
+        touchMultiplier: 2,
+      });
+
+      // Start (or restart) RAF loop for this instance
+      cancelAnimationFrame(frameId);
+      function raf(time: number) {
+        // lenisStore may have destroyed this instance — guard against stale closure
+        lenis.raf(time);
+        frameId = requestAnimationFrame(raf);
+      }
       frameId = requestAnimationFrame(raf);
-    }
-    frameId = requestAnimationFrame(raf);
+
+      return lenis;
+    };
+
+    // 1. Register factory so AppLayout can destroy+recreate Lenis without knowing its internals
+    lenisStore.setFactory(createLenis);
+
+    // 2. Create initial instance
+    lenisStore.set(createLenis());
 
     // 2. Setup scroll reveal Intersection Observer
     const observerOptions = {
@@ -149,7 +162,7 @@ export default function App() {
 
     return () => {
       cancelAnimationFrame(frameId);
-      lenis.destroy();
+      lenisStore.destroy();
       observer.disconnect();
       mutationObserver.disconnect();
     };
