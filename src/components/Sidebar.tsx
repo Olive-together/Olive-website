@@ -7,6 +7,7 @@ import {
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/authStore';
+import { useChatUIStore } from '@/store/chatUIStore';
 import { notificationsApi } from '@/lib/api/notifications.api';
 import { authApi } from '@/lib/api/auth.api';
 import { cn } from '@/lib/cn';
@@ -27,6 +28,8 @@ export function Sidebar() {
   const navigate = useNavigate();
   const logout = useAuthStore((s) => s.logout);
   const user = useAuthStore((s) => s.user);
+  const activeConvId = useChatUIStore((s) => s.activeConversationId);
+  const isMobileChatActive = location.pathname.startsWith('/messages') && Boolean(activeConvId);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -283,33 +286,35 @@ export function Sidebar() {
         {renderSidebarContent()}
       </aside>
 
-      {/* ── Mobile: top nav bar ── */}
-      <header
-        className="lg:hidden fixed top-0 left-0 right-0 z-50 px-4 py-3 flex items-center justify-between"
-        style={{
-          backgroundColor: 'var(--bg-sidebar)',
-          borderBottom: '1px solid var(--border-subtle)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-        }}
-      >
-        <Link to="/" className="flex items-center gap-2.5">
-          <img src="/logopng.png" alt="Olive Logo" className="w-9 h-9 object-contain" />
-          <span style={{ fontFamily: 'var(--font-heading)' }} className="font-bold text-olive-900 text-base">
-            LetsDoTogether
-          </span>
-        </Link>
-        <button
-          onClick={() => setMobileOpen(!mobileOpen)}
-          className="p-2 rounded-xl transition-colors"
-          style={{ color: 'var(--text-secondary)' }}
+      {/* ── Mobile: top nav bar (hidden when inside active 1-on-1/group chat conversation) ── */}
+      {!isMobileChatActive && (
+        <header
+          className="lg:hidden fixed top-0 left-0 right-0 z-50 px-4 py-3 flex items-center justify-between"
+          style={{
+            backgroundColor: 'var(--bg-sidebar)',
+            borderBottom: '1px solid var(--border-subtle)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+          }}
         >
-          {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </button>
-      </header>
+          <Link to="/" className="flex items-center gap-2.5">
+            <img src="/logopng.png" alt="Olive Logo" className="w-9 h-9 object-contain" />
+            <span style={{ fontFamily: 'var(--font-heading)' }} className="font-bold text-olive-900 text-base">
+              LetsDoTogether
+            </span>
+          </Link>
+          <button
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="p-2 rounded-xl transition-colors"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+        </header>
+      )}
 
       {/* ── Mobile drawer ── */}
-      {mobileOpen && (
+      {!isMobileChatActive && mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-40 flex">
           {/* Backdrop */}
           <div
@@ -340,43 +345,45 @@ export function Sidebar() {
         </div>
       )}
 
-      {/* ── Mobile bottom bar ── */}
-      <nav
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex"
-        style={{
-          backgroundColor: 'var(--bg-sidebar)',
-          borderTop: '1px solid var(--border-subtle)',
-          paddingBottom: 'env(safe-area-inset-bottom)',
-        }}
-      >
-        {navItems.slice(0, 5).map(({ to, icon: Icon, badge, label }) => {
-          const active = location.pathname === to;
-          return (
-            <Link
-              key={to}
-              to={to}
-              className="flex-1 flex flex-col items-center gap-0.5 py-2.5 relative transition-colors"
-              style={{ color: active ? 'var(--accent-bright)' : 'var(--text-muted)' }}
-            >
-              <div className="relative">
-                <Icon className={cn('w-5 h-5 transition-transform duration-150', active && 'scale-110')} />
-                {badge !== undefined && (
-                  <span className="absolute -top-1.5 -right-2 w-4 h-4 flex items-center justify-center text-[9px] font-bold text-white rounded-full bg-olive-500">
-                    {badge > 9 ? '9+' : badge}
-                  </span>
+      {/* ── Mobile bottom bar (hidden when inside active 1-on-1/group chat conversation) ── */}
+      {!isMobileChatActive && (
+        <nav
+          className="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex"
+          style={{
+            backgroundColor: 'var(--bg-sidebar)',
+            borderTop: '1px solid var(--border-subtle)',
+            paddingBottom: 'env(safe-area-inset-bottom)',
+          }}
+        >
+          {navItems.slice(0, 5).map(({ to, icon: Icon, badge, label }) => {
+            const active = location.pathname === to;
+            return (
+              <Link
+                key={to}
+                to={to}
+                className="flex-1 flex flex-col items-center gap-0.5 py-2.5 relative transition-colors"
+                style={{ color: active ? 'var(--accent-bright)' : 'var(--text-muted)' }}
+              >
+                <div className="relative">
+                  <Icon className={cn('w-5 h-5 transition-transform duration-150', active && 'scale-110')} />
+                  {badge !== undefined && (
+                    <span className="absolute -top-1.5 -right-2 w-4 h-4 flex items-center justify-center text-[9px] font-bold text-white rounded-full bg-olive-500">
+                      {badge > 9 ? '9+' : badge}
+                    </span>
+                  )}
+                </div>
+                <span className="text-[10px] font-semibold">{label}</span>
+                {active && (
+                  <span
+                    className="absolute bottom-0 left-1/2 -translate-x-1/2 w-5 h-0.5 rounded-full"
+                    style={{ backgroundColor: 'var(--accent-bright)' }}
+                  />
                 )}
-              </div>
-              <span className="text-[10px] font-semibold">{label}</span>
-              {active && (
-                <span
-                  className="absolute bottom-0 left-1/2 -translate-x-1/2 w-5 h-0.5 rounded-full"
-                  style={{ backgroundColor: 'var(--accent-bright)' }}
-                />
-              )}
-            </Link>
-          );
-        })}
-      </nav>
+              </Link>
+            );
+          })}
+        </nav>
+      )}
     </>
   );
 }

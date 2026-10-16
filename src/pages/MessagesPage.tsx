@@ -10,6 +10,7 @@ import { cn } from '@/lib/cn';
 import type { Message, Conversation } from '@/lib/api/types';
 import { useLocation } from 'react-router-dom';
 import { lenisStore } from '@/lib/lenisStore';
+import { useChatUIStore } from '@/store/chatUIStore';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function getAvatar(avatarUrl: string | null | undefined, seed: string) {
@@ -235,6 +236,16 @@ export function MessagesPage() {
   const queryClient = useQueryClient();
   const user = useAuthStore((s) => s.user);
   const accessToken = useAuthStore((s) => s.accessToken);
+  const setActiveConversationId = useChatUIStore((s) => s.setActiveConversationId);
+  const isKeyboardOpen = useChatUIStore((s) => s.isKeyboardOpen);
+
+  // Sync selected conversation with chatUIStore so Sidebar and AppLayout adapt on mobile
+  useEffect(() => {
+    setActiveConversationId(selectedConvId);
+    return () => {
+      setActiveConversationId(null);
+    };
+  }, [selectedConvId, setActiveConversationId]);
 
   const { data: conversations = [], refetch: refetchConversations } = useQuery({
     queryKey: ['conversations'],
@@ -345,9 +356,9 @@ export function MessagesPage() {
   const isGroupConv = selectedConv?.type === 'GROUP' || (canShowChat && !selectedConv);
 
   return (
-    // flex-1 fills the remaining space inside AppLayout's 100dvh fixed container.
-    // The parent already handles keyboard-aware resizing via dvh.
-    <div className="flex flex-1 overflow-hidden animate-fade-in">
+    // flex-1 fills the remaining space inside AppLayout's container.
+    // Container height dynamically adapts to the mobile virtual viewport.
+    <div className="flex flex-1 h-full max-h-full overflow-hidden animate-fade-in">
 
       {/* ══ Conversation List Panel ══════════════════════════════════════════ */}
       <div
@@ -543,12 +554,18 @@ export function MessagesPage() {
       {/* ══ Chat Area ════════════════════════════════════════════════════════ */}
       {canShowChat && chatHeader ? (
         <div
-          className={cn('flex flex-col flex-1 min-w-0 relative', selectedConvId ? 'flex' : 'hidden md:flex')}
+          className={cn(
+            'flex flex-col flex-1 min-w-0 h-full relative overflow-hidden',
+            selectedConvId ? 'flex' : 'hidden md:flex',
+          )}
         >
-          {/* ── Chat Header (glass) ── */}
+          {/* ── Chat Header (glass) with mobile safe-area support ── */}
           <div
             className="flex items-center gap-3 px-4 py-3 flex-shrink-0 relative z-10 glass"
-            style={{ borderBottom: '1px solid var(--border-subtle)' }}
+            style={{
+              borderBottom: '1px solid var(--border-subtle)',
+              paddingTop: 'max(env(safe-area-inset-top), 0.75rem)',
+            }}
           >
             <button
               onClick={() => { setSelectedConvId(null); setShowMembers(false); }}
@@ -639,7 +656,11 @@ export function MessagesPage() {
           )}
 
           {/* ── Messages ── */}
-          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-1 chat-bg" data-lenis-prevent>
+          <div
+            className="flex-1 overflow-y-auto px-4 py-4 space-y-1 chat-bg"
+            style={{ overscrollBehaviorY: 'contain' }}
+            data-lenis-prevent
+          >
             {messages.map((msg, idx) => {
               const isMe = msg.sender?.id === user?.id;
               const { isFirst, isLast } = getGrouping(messages, idx);
@@ -710,15 +731,28 @@ export function MessagesPage() {
 
           {/* ── Composer ── */}
           <div
-            className="flex-shrink-0 p-4"
-            style={{ backgroundColor: 'var(--bg-card)', borderTop: '1px solid var(--border-subtle)' }}
+            className="flex-shrink-0 px-3 py-2.5 md:p-4 transition-all"
+            style={{
+              backgroundColor: 'var(--bg-card)',
+              borderTop: '1px solid var(--border-subtle)',
+              paddingBottom: isKeyboardOpen
+                ? '0.625rem'
+                : 'max(env(safe-area-inset-bottom), 0.75rem)',
+            }}
           >
-            <div className="composer flex items-center gap-3 px-4 py-2.5">
+            <div className="composer flex items-center gap-3 px-3.5 py-2 md:px-4 md:py-2.5">
               <input
                 ref={inputRef}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
+                onFocus={() => {
+                  // Prevent iOS Safari auto-scroll drift and keep latest message in view
+                  setTimeout(() => {
+                    if (window.scrollY !== 0) window.scrollTo(0, 0);
+                    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+                  }, 80);
+                }}
                 placeholder={
                   isGroupConv
                     ? `Message ${chatHeader.name}…`
@@ -728,7 +762,7 @@ export function MessagesPage() {
                         ''
                       }…`
                 }
-                className="flex-1 bg-transparent border-none outline-none text-sm"
+                className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-sm"
                 style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-sans)' }}
               />
               <button
@@ -739,7 +773,7 @@ export function MessagesPage() {
                 <Send className="w-4 h-4" />
               </button>
             </div>
-            <p className="text-[11px] mt-1.5 ml-1" style={{ color: 'var(--text-muted)' }}>
+            <p className="hidden md:block text-[11px] mt-1.5 ml-1" style={{ color: 'var(--text-muted)' }}>
               Press Enter to send
             </p>
           </div>
